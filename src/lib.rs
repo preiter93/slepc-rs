@@ -20,7 +20,7 @@
 //! ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --download-f2cblaslapack
 //! make all check
 //! ```
-//! (You can choose a custom arch name, or build without fc, i.e. --with-fc=0)
+//! (You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`)
 //!
 //! Then export directory, arch name and library path, i.e.
 //! ```text
@@ -43,3 +43,7 @@
 //! export SLEPC_DIR=${HOME}/local/slepc-3.16.2
 //! export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${SLEPC_DIR}/${PETSC_ARCH}/lib
 //! ```
+//!
+//! ## Other similar crates
+//! - https://gitlab.com/petsc/petsc-rs
+//! - https://github.com/tflovorn/slepc-sys

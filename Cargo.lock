@@ -214,6 +214,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 
 [[package]]
+name = "petsc-sys"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "build-probe-mpi",
+]
+
+[[package]]
 name = "pkg-config"
 version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -276,8 +284,17 @@ checksum = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
 name = "slepc-rs"
 version = "0.1.0"
 dependencies = [
+ "petsc-sys",
+ "slepc-sys",
+]
+
+[[package]]
+name = "slepc-sys"
+version = "0.1.0"
+dependencies = [
  "bindgen",
  "build-probe-mpi",
+ "petsc-sys",
 ]
 
 [[package]]
