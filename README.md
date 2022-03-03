@@ -1,6 +1,6 @@
 # slepc-rs
 
-##`slepc-rs`: SLEPc rust bindings
+## `slepc-rs`: SLEPc rust bindings
 
 Currently, this repository is only to demonstrate
 how SLEPc can be called from Rust.
