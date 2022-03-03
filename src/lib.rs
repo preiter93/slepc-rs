@@ -14,12 +14,13 @@
 //! Download [download PETSc](https://petsc.org/release/download/). This
 //! crate is tested with v.`3.16.4`.
 //!
-//! Install petsc via (you can choose a custom arch name, or build with fc, --with-fc=0)
+//! Install petsc via
 //! ```text
 //! export PETSC_ARCH=linux-gnu-real-debug
 //! ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --download-f2cblaslapack
 //! make all check
 //! ```
+//! (You can choose a custom arch name, or build without fc, i.e. --with-fc=0)
 //!
 //! Then export directory, arch name and library path, i.e.
 //! ```text
