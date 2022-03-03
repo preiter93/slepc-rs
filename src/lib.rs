@@ -12,7 +12,7 @@
 //!
 //! ### PETSc
 //! Download [download PETSc](https://petsc.org/release/download/). This
-//! crate is tested with v. `3.16.4`.
+//! crate is tested with v.`3.16.4`.
 //!
 //! Install petsc via (you can choose a custom arch name, or build with fc, --with-fc=0)
 //! ```text
@@ -30,7 +30,7 @@
 //!
 //! ### SLEPc
 //! Download [download SLEPc](https://slepc.upv.es/download/). This
-//! crate is tested with v. `3.16.2`.
+//! crate is tested with v.`3.16.2`.
 //!
 //! Install slepc via
 //! ```text

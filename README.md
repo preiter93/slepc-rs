@@ -14,7 +14,7 @@ how SLEPc can be called from Rust.
 
 #### PETSc
 Download [download PETSc](https://petsc.org/release/download/). This
-crate is tested with v. `3.16.4`.
+crate is tested with v.`3.16.4`.
 
 Install petsc via (you can choose a custom arch name, or build with fc, --with-fc=0)
 ```
@@ -32,7 +32,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PETSC_DIR}/${PETSC_ARCH}/lib
 
 #### SLEPc
 Download [download SLEPc](https://slepc.upv.es/download/). This
-crate is tested with v. `3.16.2`.
+crate is tested with v.`3.16.2`.
 
 Install slepc via
 ```
