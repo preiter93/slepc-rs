@@ -3,6 +3,11 @@
 //! Currently, this repository is only to demonstrate
 //! how SLEPc can be called from Rust.
 //!
+//! ## Dependencies
+//! - `clang`
+//! - `mpi`
+//! - `petsc` and `slepc`, see Installation section
+//!
 //! ## Installation
 //!
 //! ### PETSc
