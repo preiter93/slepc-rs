@@ -80,6 +80,10 @@ fn main() {
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        // Make C enums into rust enums not consts
+        .default_enum_style(bindgen::EnumVariation::Rust {
+            non_exhaustive: false,
+        })
         // .parse_callbacks(Box::new(ignored_macros))
         .rustfmt_bindings(true)
         // Finish the builder and generate the bindings.

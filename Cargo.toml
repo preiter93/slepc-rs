@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-petsc-sys = { path = "./petsc-sys" }
+# petsc-sys = { path = "./petsc-sys" }
 slepc-sys = { path = "./slepc-sys" }
 
 # [build-dependencies]

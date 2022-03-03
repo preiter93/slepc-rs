@@ -1,49 +1,10 @@
+//! # Standard symmetric eigenvalue problem: Eigenvalues of 1D Laplacian
+//!
 //! Example from
-// https://slepc.upv.es/documentation/current/src/eps/tutorials/ex1.c.html
-
-use slepc_sys::Mat as Petsc_Mat;
-use slepc_sys::{PetscInt, PetscPrintf, PetscScalar};
+//! https://slepc.upv.es/documentation/current/src/eps/tutorials/ex1.c.html
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 use std::os::raw::{c_char, c_int};
-
-fn ex0() {
-    // Command line arguments
-    let argv = std::env::args().collect::<Vec<String>>();
-    let argc = argv.len();
-    let mut c_argc = argc as c_int;
-    let mut c_argv = argv
-        .into_iter()
-        .map(|arg| CString::new(arg).unwrap().into_raw())
-        .collect::<Vec<*mut c_char>>();
-    let mut c_argv_ptr = c_argv.as_mut_ptr();
-
-    unsafe {
-        // Initialize slepc
-        let ierr = slepc_sys::SlepcInitialize(
-            &mut c_argc,
-            &mut c_argv_ptr,
-            std::ptr::null(),
-            std::ptr::null(),
-        );
-        if ierr != 0 {
-            println!("error code {} from SlepcInitialize", ierr);
-        }
-
-        // Print hello world
-        let msg = CString::new("Hello from SLEPc\n").unwrap();
-        let ierr = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
-        if ierr != 0 {
-            println!("error code {} from PetscPrintf", ierr);
-        }
-
-        // Finalize slepc
-        let ierr = slepc_sys::SlepcFinalize();
-        if ierr != 0 {
-            println!("error code {} from SlepcFinalize", ierr);
-        }
-    };
-}
 
 fn check_err(ierr: i32, function_name: &str) {
     if ierr != 0 {
@@ -58,7 +19,7 @@ const EPS_MAXIT: slepc_sys::PetscInt = 10000;
 // Requested eigenvalues
 const EPS_NEV: slepc_sys::PetscInt = 2;
 
-fn ex1() {
+fn main() {
     // Set openblas num threads to 1, otherwise it might
     // conflict with mpi parallelization
     std::env::set_var("OPENBLAS_NUM_THREADS", "1");
@@ -74,17 +35,15 @@ fn ex1() {
 
     // Parameters
     let n = 10000;
-    // let local_rows: Option<PetscInt> = Some(n);
-    // let local_cols: Option<PetscInt> = Some(n);
-    let local_rows: Option<PetscInt> = None;
-    let local_cols: Option<PetscInt> = None;
-    let global_rows: Option<PetscInt> = Some(n);
-    let global_cols: Option<PetscInt> = Some(n);
+    let local_rows: Option<slepc_sys::PetscInt> = None;
+    let local_cols: Option<slepc_sys::PetscInt> = None;
+    let global_rows: Option<slepc_sys::PetscInt> = Some(n);
+    let global_cols: Option<slepc_sys::PetscInt> = Some(n);
 
     // Uninitialized pointers
     let mut mat_p_ = MaybeUninit::uninit();
-    let mut i_start = MaybeUninit::<PetscInt>::uninit();
-    let mut i_end = MaybeUninit::<PetscInt>::uninit();
+    let mut i_start = MaybeUninit::<slepc_sys::PetscInt>::uninit();
+    let mut i_end = MaybeUninit::<slepc_sys::PetscInt>::uninit();
     let mut xr = MaybeUninit::uninit();
     let mut xi = MaybeUninit::uninit();
     let mut eps_ = MaybeUninit::uninit();
@@ -95,9 +54,9 @@ fn ex1() {
     let mut tol_ = MaybeUninit::uninit();
     let mut maxit_ = MaybeUninit::uninit();
     let mut nconv_ = MaybeUninit::uninit();
-    let mut kr_ = MaybeUninit::<PetscScalar>::uninit();
-    let mut ki_ = MaybeUninit::<PetscScalar>::uninit();
-    let mut error_ = MaybeUninit::<PetscScalar>::uninit();
+    let mut kr_ = MaybeUninit::<slepc_sys::PetscScalar>::uninit();
+    let mut ki_ = MaybeUninit::<slepc_sys::PetscScalar>::uninit();
+    let mut error_ = MaybeUninit::<slepc_sys::PetscScalar>::uninit();
 
     unsafe {
         // Initialize slepc
@@ -111,13 +70,13 @@ fn ex1() {
 
         // Print hello world
         let msg = CString::new("Hello from SLEPc\n").unwrap();
-        let ierr = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+        let ierr = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
         check_err(ierr, "PetscPrintf");
 
         // Initialize Matrix
         let ierr = slepc_sys::MatCreate(slepc_sys::PETSC_COMM_WORLD, mat_p_.as_mut_ptr());
         check_err(ierr, "MatCreate");
-        let mat_p: Petsc_Mat = mat_p_.assume_init();
+        let mat_p: slepc_sys::Mat = mat_p_.assume_init();
 
         // ----------------------------------------------
         //               Build Matrix
@@ -143,8 +102,8 @@ fn ex1() {
 
         // By default the values, v, are row-oriented.
         for i in i_start.assume_init()..i_end.assume_init() {
-            let idxm: &[PetscInt] = &[i];
-            let (idxn, v): (Vec<PetscInt>, &[PetscScalar]) = if i == 0 {
+            let idxm: &[slepc_sys::PetscInt] = &[i];
+            let (idxn, v): (Vec<slepc_sys::PetscInt>, &[slepc_sys::PetscScalar]) = if i == 0 {
                 (vec![i, i + 1], &[2., -1.])
             } else if i == n - 1 {
                 (vec![i - 1, i], &[-1., 2.])
@@ -156,9 +115,9 @@ fn ex1() {
             assert_eq!(v.len(), m * n);
             let ierr = slepc_sys::MatSetValues(
                 mat_p,
-                m as PetscInt,
+                m as slepc_sys::PetscInt,
                 idxm.as_ptr(),
-                n as PetscInt,
+                n as slepc_sys::PetscInt,
                 idxn.as_ptr(),
                 v.as_ptr() as *mut _,
                 slepc_sys::InsertMode::INSERT_VALUES,
@@ -228,23 +187,23 @@ fn ex1() {
             its_.assume_init()
         ))
         .unwrap();
-        let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+        let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
         let c_str: &std::ffi::CStr = std::ffi::CStr::from_ptr(type_.assume_init());
         let msg = CString::new(format!("Solution method: {} \n", c_str.to_str().unwrap())).unwrap();
-        let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+        let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
         let msg = CString::new(format!(
             "Number of requested eigenvalues: {} \n",
             nev_.assume_init()
         ))
         .unwrap();
-        let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+        let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
         let msg = CString::new(format!(
             "Stopping condition: tol={:e}, maxit={} \n",
             tol_.assume_init(),
             maxit_.assume_init()
         ))
         .unwrap();
-        let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+        let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
 
         // Get number of converged eigenpairs
         let _ = slepc_sys::EPSGetConverged(eps, nconv_.as_mut_ptr());
@@ -253,7 +212,7 @@ fn ex1() {
             nconv_.assume_init()
         ))
         .unwrap();
-        let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+        let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
 
         if nconv_.assume_init() > 0 {
             // Display eigenvalues and relative errors
@@ -261,7 +220,7 @@ fn ex1() {
                 "\n           k          ||Ax-kx||/||kx||\n  ----------------- ------------------\n",
             )
             .unwrap();
-            let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+            let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
 
             for i in 0..nconv_.assume_init() {
                 // Get converged eigenpairs
@@ -294,10 +253,10 @@ fn ex1() {
                     error_.assume_init()
                 ))
                 .unwrap();
-                let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+                let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
             }
             let msg = CString::new("\n").unwrap();
-            let _ = PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
+            let _ = slepc_sys::PetscPrintf(slepc_sys::PETSC_COMM_WORLD, msg.as_ptr());
         }
 
         // ----------------------------------------------
@@ -313,85 +272,3 @@ fn ex1() {
         check_err(ierr, "SlepcFinalize");
     };
 }
-
-fn main() {
-    ex1();
-}
-/*pub mod petsc_sys;
-pub mod slepc_sys;
-
-use std::ffi::CString;
-use std::os::raw::{c_char, c_int};
-use std::vec::Vec as VecR;
-
-fn main() {
-    use crate::petsc_sys::{PetscPrintf, PETSC_COMM_WORLD};
-    use crate::slepc_sys::{SlepcFinalize, SlepcInitialize};
-
-    println!("Hello, world!");
-    let argv = std::env::args().collect::<VecR<String>>();
-    let argc = argv.len();
-
-    let mut c_argc = argc as c_int;
-    let mut c_argv = argv
-        .into_iter()
-        .map(|arg| CString::new(arg).unwrap().into_raw())
-        .collect::<VecR<*mut c_char>>();
-    let mut c_argv_ptr = c_argv.as_mut_ptr();
-
-    unsafe {
-        let ierr = SlepcInitialize(
-            &mut c_argc,
-            &mut c_argv_ptr,
-            std::ptr::null(),
-            std::ptr::null(),
-        );
-        if ierr != 0 {
-            println!("error code {} from SlepcInitialize", ierr);
-        }
-
-        let msg = CString::new("Hello from SLEPc and PETSc\n").unwrap();
-
-        let ierr = PetscPrintf(PETSC_COMM_WORLD, msg.as_ptr());
-        if ierr != 0 {
-            println!("error code {} from PetscPrintf", ierr);
-        }
-
-        let ierr = SlepcFinalize();
-        if ierr != 0 {
-            println!("error code {} from SlepcFinalize", ierr);
-        }
-    };
-}*/
-
-// fn main() {
-//     println!("Hello, world!");
-
-//     let argv = std::env::args().collect::<VecR<String>>();
-//     let argc = argv.len();
-
-//     let mut c_argc = argc as c_int;
-//     let mut c_argv = argv
-//         .into_iter()
-//         .map(|arg| CString::new(arg).unwrap().into_raw())
-//         .collect::<VecR<*mut c_char>>();
-//     let mut c_argv_ptr = c_argv.as_mut_ptr();
-
-//     unsafe {
-//         let ierr = PetscInitialize(
-//             &mut c_argc,
-//             &mut c_argv_ptr,
-//             std::ptr::null(),
-//             std::ptr::null(),
-//         );
-
-//         if ierr != 0 {
-//             println!("error code {} from PetscInitialize", ierr);
-//         }
-
-//         let ierr = PetscFinalize();
-//         if ierr != 0 {
-//             println!("error code {} from PetscFinalize", ierr);
-//         }
-//     };
-// }
