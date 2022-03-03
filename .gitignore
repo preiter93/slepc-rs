@@ -1,0 +1,4 @@
+/target
+/petsc-sys
+/slepc-sys/target
+/src/mpi.rs

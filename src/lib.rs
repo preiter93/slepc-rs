@@ -45,5 +45,33 @@
 //! ```
 //!
 //! ## Other similar crates
-//! - https://gitlab.com/petsc/petsc-rs
-//! - https://github.com/tflovorn/slepc-sys
+//! - <https://gitlab.com/petsc/petsc-rs>
+//! - <https://github.com/tflovorn/slepc-sys>
+pub mod eigensolver;
+pub mod matrix;
+pub mod world;
+
+// From `rsmpi` crate
+pub(crate) unsafe fn with_uninitialized<F, U, R>(f: F) -> (R, U)
+where
+    F: FnOnce(*mut U) -> R,
+{
+    let mut uninitialized = std::mem::MaybeUninit::uninit();
+    let res = f(uninitialized.as_mut_ptr());
+    (res, uninitialized.assume_init())
+}
+
+// From `rsmpi` crate
+pub(crate) unsafe fn with_uninitialized2<F, U, V, R>(f: F) -> (R, U, V)
+where
+    F: FnOnce(*mut U, *mut V) -> R,
+{
+    let mut uninitialized0 = std::mem::MaybeUninit::uninit();
+    let mut uninitialized1 = std::mem::MaybeUninit::uninit();
+    let res = f(uninitialized0.as_mut_ptr(), uninitialized1.as_mut_ptr());
+    (
+        res,
+        uninitialized0.assume_init(),
+        uninitialized1.assume_init(),
+    )
+}
