@@ -1,5 +1,7 @@
 //! # Standard symmetric eigenvalue problem: Eigenvalues of 1D Laplacian
 //!
+//! See examples/ex01_rusty for a more Rusty implementation
+//!
 //! Example from
 //! https://slepc.upv.es/documentation/current/src/eps/tutorials/ex1.c.html
 use std::ffi::CString;
