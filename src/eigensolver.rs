@@ -245,4 +245,12 @@ impl SlepcEps {
         }
         error
     }
+
+    /// Wrapper for [`slepc_sys::EPSDestroy`]
+    pub fn destroy(&self) {
+        let ierr = unsafe { slepc_sys::EPSDestroy(&mut self.as_raw() as *mut _) };
+        if ierr != 0 {
+            println!("error code {} from EPSDestroy", ierr);
+        }
+    }
 }

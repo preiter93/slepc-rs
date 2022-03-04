@@ -151,6 +151,11 @@ fn main() {
         plot_gnu(&vec_vals);
     }
 
+    mat.destroy();
+    xi.destroy();
+    xr.destroy();
+    eps.destroy();
+
     SlepcWorld::finalize();
 }
 

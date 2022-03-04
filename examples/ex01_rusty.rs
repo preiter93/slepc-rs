@@ -113,5 +113,9 @@ fn main() {
         world.print(&format!("{:9.6} {:9.6}i {:12.2e} \n", re, im, error));
     }
 
+    mat.destroy();
+    xi.destroy();
+    xr.destroy();
+    eps.destroy();
     SlepcWorld::finalize();
 }

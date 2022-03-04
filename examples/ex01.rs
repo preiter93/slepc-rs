@@ -78,7 +78,7 @@ fn main() {
         // Initialize Matrix
         let ierr = slepc_sys::MatCreate(slepc_sys::PETSC_COMM_WORLD, mat_p_.as_mut_ptr());
         check_err(ierr, "MatCreate");
-        let mat_p: slepc_sys::Mat = mat_p_.assume_init();
+        let mut mat_p: slepc_sys::Mat = mat_p_.assume_init();
 
         // ----------------------------------------------
         //               Build Matrix
@@ -146,7 +146,7 @@ fn main() {
         // Create eigensolve context
         let ierr = slepc_sys::EPSCreate(slepc_sys::PETSC_COMM_WORLD, eps_.as_mut_ptr());
         check_err(ierr, "EPSCreate");
-        let eps = eps_.assume_init();
+        let mut eps = eps_.assume_init();
 
         // Set operators
         let ierr = slepc_sys::EPSSetOperators(eps, mat_p, std::ptr::null_mut());
@@ -268,6 +268,18 @@ fn main() {
         // TODO: This errors with Invalid Pointer
         // let _ = slepc_sys::MatDestroy(mat_p as *mut _);
         // let _ = slepc_sys::EPSDestroy(eps as *mut _);
+
+        let ierr = slepc_sys::VecDestroy(&mut xr.assume_init() as *mut _);
+        check_err(ierr, "VecDestroy");
+
+        let ierr = slepc_sys::VecDestroy(&mut xi.assume_init() as *mut _);
+        check_err(ierr, "VecDestroy");
+
+        let ierr = slepc_sys::MatDestroy(&mut mat_p as *mut _);
+        check_err(ierr, "MatDestroy");
+
+        let ierr = slepc_sys::EPSDestroy(&mut eps as *mut _);
+        check_err(ierr, "EPSDestroy");
 
         // Finalize slepc
         let ierr = slepc_sys::SlepcFinalize();

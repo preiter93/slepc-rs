@@ -220,4 +220,12 @@ impl PetscVec {
         }
         (i_start, i_end)
     }
+
+    /// Wrapper for [`slepc_sys::VecDestroy`]
+    pub fn destroy(&self) {
+        let ierr = unsafe { slepc_sys::VecDestroy(&mut self.as_raw() as *mut _) };
+        if ierr != 0 {
+            println!("error code {} from VecDestroy", ierr);
+        }
+    }
 }

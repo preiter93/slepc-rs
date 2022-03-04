@@ -170,9 +170,9 @@ impl PetscMat {
         PetscVec::from_raw(vec)
     }
 
-    // / Wrapper for [`slepc_sys::MatCreateVecs`]
-    // /
-    // / Return left - vector that the matrix vector product can be stored in
+    /// Wrapper for [`slepc_sys::MatCreateVecs`]
+    ///
+    /// Return left - vector that the matrix vector product can be stored in
     pub fn create_vec_left(&self) -> PetscVec {
         let (ierr, vec) = unsafe {
             with_uninitialized(|vec| {
@@ -183,5 +183,13 @@ impl PetscMat {
             println!("error code {} from MatCreateVecs", ierr);
         }
         PetscVec::from_raw(vec)
+    }
+
+    /// Wrapper for [`slepc_sys::MatDestroy`]
+    pub fn destroy(&self) {
+        let ierr = unsafe { slepc_sys::MatDestroy(&mut self.as_raw() as *mut _) };
+        if ierr != 0 {
+            println!("error code {} from MatDestroy", ierr);
+        }
     }
 }
