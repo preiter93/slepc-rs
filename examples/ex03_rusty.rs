@@ -152,6 +152,8 @@ fn main() {
     }
 
     mat.destroy();
+    x.destroy();
+    y.destroy();
     xi.destroy();
     xr.destroy();
     eps.destroy();
