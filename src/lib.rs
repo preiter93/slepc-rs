@@ -49,6 +49,8 @@
 //! - <https://github.com/tflovorn/slepc-sys>
 pub mod eigensolver;
 pub mod matrix;
+pub mod matrix_shell;
+pub mod vector;
 pub mod world;
 
 // From `rsmpi` crate

@@ -50,11 +50,11 @@ fn main() {
     for i in i_start..i_end {
         let idxm: &[slepc_sys::PetscInt] = &[i];
         let (idxn, v): (Vec<slepc_sys::PetscInt>, &[slepc_sys::PetscScalar]) = if i == 0 {
-            (vec![i, i + 1], &[2., -1.])
+            (vec![i, i + 1], &[-2., 1.])
         } else if i == n - 1 {
-            (vec![i - 1, i], &[-1., 2.])
+            (vec![i - 1, i], &[1., -2.])
         } else {
-            (vec![i - 1, i, i + 1], &[-1., 2., -1.])
+            (vec![i - 1, i, i + 1], &[1., -2., 1.])
         };
         mat.set_values(idxm, &idxn, v, addv);
     }
@@ -73,6 +73,7 @@ fn main() {
     eps.set_operators(Some(mat.as_raw()), None);
     eps.set_tolerances(Some(EPS_TOL), Some(EPS_MAXIT));
     eps.set_dimensions(Some(EPS_NEV), None, None);
+    // eps.set_which_eigenpairs(slepc_sys::EPSWhich::EPS_LARGEST_REAL);
     eps.set_from_options();
 
     // ----------------------------------------------
@@ -106,7 +107,7 @@ fn main() {
         "\n           k          ||Ax-kx||/||kx||\n  ----------------- ------------------\n",
     );
     for i in 0..eps_nconv {
-        let (kr, ki) = eps.get_eigenpair(i, xr, xi);
+        let (kr, ki) = eps.get_eigenpair(i, xr.as_raw(), xi.as_raw());
         let error = eps.compute_error(i, slepc_sys::EPSErrorType::EPS_ERROR_RELATIVE);
         let (re, im) = (kr, ki);
         world.print(&format!("{:9.6} {:9.6}i {:12.2e} \n", re, im, error));

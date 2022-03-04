@@ -1,38 +1,29 @@
 //! Matrix routines of PETSc matrices [`slepc_sys::Mat`]
-use crate::with_uninitialized;
+use crate::vector::PetscVec;
 use crate::world::SlepcWorld;
+use crate::{with_uninitialized, with_uninitialized2};
 
-pub struct PetscMat<'a> {
-    // World communicator
-    pub world: &'a SlepcWorld,
+pub struct PetscMat {
+    // // World communicator
+    // pub world: &'a SlepcWorld,
     // Pointer to matrix object
     pub mat_p: *mut slepc_sys::_p_Mat,
 }
 
-impl<'a> PetscMat<'a> {
+impl PetscMat {
     /// Same as `Mat { ... }` but sets all optional params to `None`
-    pub fn new(world: &'a SlepcWorld, mat_p: *mut slepc_sys::_p_Mat) -> Self {
-        Self { world, mat_p }
+    pub fn from_raw(mat_p: *mut slepc_sys::_p_Mat) -> Self {
+        Self { mat_p }
     }
 
-    // /// Wrapper around [`slepc_sys::MatCreate`]
-    // pub fn create(world: &'a SlepcWorld) -> Self {
-    //     let mut mat_p = std::mem::MaybeUninit::uninit();
-    //     let ierr = unsafe { slepc_sys::MatCreate(world.as_raw(), mat_p.as_mut_ptr()) };
-    //     if ierr != 0 {
-    //         println!("error code {} from MatCreate", ierr);
-    //     }
-    //     Self::new(world, unsafe { mat_p.assume_init() })
-    // }
-
     /// Wrapper for [`slepc_sys::MatCreate`]
-    pub fn create(world: &'a SlepcWorld) -> Self {
+    pub fn create<'a>(world: &'a SlepcWorld) -> Self {
         let (ierr, mat_p) =
             unsafe { with_uninitialized(|mat_p| slepc_sys::MatCreate(world.as_raw(), mat_p)) };
         if ierr != 0 {
             println!("error code {} from MatCreate", ierr);
         }
-        Self::new(world, mat_p)
+        Self::from_raw(mat_p)
     }
 
     // Return raw `mat_p`
@@ -95,23 +86,8 @@ impl<'a> PetscMat<'a> {
         }
     }
 
-    /// Wrapper for [`slepc_sys::MatGetOwnershipRange`]
-    /// Returns the range of matrix rows owned by this processor.
-    pub fn get_ownership_range(&self) -> (slepc_sys::PetscInt, slepc_sys::PetscInt) {
-        let mut i_start = std::mem::MaybeUninit::<slepc_sys::PetscInt>::uninit();
-        let mut i_end = std::mem::MaybeUninit::<slepc_sys::PetscInt>::uninit();
-        let ierr = unsafe {
-            slepc_sys::MatGetOwnershipRange(self.as_raw(), i_start.as_mut_ptr(), i_end.as_mut_ptr())
-        };
-        if ierr != 0 {
-            println!("error code {} from MatGetOwnershipRange", ierr);
-        }
-
-        unsafe { (i_start.assume_init(), i_end.assume_init()) }
-    }
-
     /// Wrapper for [`slepc_sys::MatSetFromOptions`]
-    pub fn set_from_options(&self) {
+    pub fn set_from_options(&mut self) {
         let ierr = unsafe { slepc_sys::MatSetFromOptions(self.as_raw()) };
         if ierr != 0 {
             println!("error code {} from MatSetFromOptions", ierr);
@@ -119,11 +95,48 @@ impl<'a> PetscMat<'a> {
     }
 
     /// Wrapper for [`slepc_sys::MatSetUp`]
-    pub fn set_up(&self) {
+    pub fn set_up(&mut self) {
         let ierr = unsafe { slepc_sys::MatSetUp(self.as_raw()) };
         if ierr != 0 {
             println!("error code {} from MatSetUp", ierr);
         }
+    }
+
+    /// Wrapper for [`slepc_sys::MatGetValues`]
+    pub fn get_values(
+        &self,
+        idxm: &[slepc_sys::PetscInt],
+        idxn: &[slepc_sys::PetscInt],
+    ) -> Vec<slepc_sys::PetscScalar> {
+        let mut v = vec![slepc_sys::PetscScalar::default(); idxm.len() * idxn.len()];
+        let ierr = unsafe {
+            slepc_sys::MatGetValues(
+                self.as_raw(),
+                idxm.len() as slepc_sys::PetscInt,
+                idxm.as_ptr(),
+                idxn.len() as slepc_sys::PetscInt,
+                idxn.as_ptr(),
+                v[..].as_mut_ptr() as *mut _,
+            )
+        };
+        if ierr != 0 {
+            println!("error code {} from MatGetValues", ierr);
+        }
+        v
+    }
+
+    /// Wrapper for [`slepc_sys::MatGetOwnershipRange`]
+    /// Returns the range of matrix rows owned by this processor.
+    pub fn get_ownership_range(&self) -> (slepc_sys::PetscInt, slepc_sys::PetscInt) {
+        let (ierr, i_start, i_end) = unsafe {
+            with_uninitialized2(|i_start, i_end| {
+                slepc_sys::MatGetOwnershipRange(self.as_raw(), i_start, i_end)
+            })
+        };
+        if ierr != 0 {
+            println!("error code {} from MatGetOwnershipRange", ierr);
+        }
+        (i_start, i_end)
     }
 
     /// Wrapper for [`slepc_sys::MatAssemblyBegin`]
@@ -144,8 +157,8 @@ impl<'a> PetscMat<'a> {
 
     /// Wrapper for [`slepc_sys::MatCreateVecs`]
     ///
-    /// Return right . vector that the matrix can be multiplied against
-    pub fn create_vec_right(&self) -> slepc_sys::Vec {
+    /// Return right - vector that the matrix can be multiplied against
+    pub fn create_vec_right(&self) -> PetscVec {
         let (ierr, vec) = unsafe {
             with_uninitialized(|vec| {
                 slepc_sys::MatCreateVecs(self.as_raw(), vec, std::ptr::null_mut())
@@ -154,13 +167,13 @@ impl<'a> PetscMat<'a> {
         if ierr != 0 {
             println!("error code {} from MatCreateVecs", ierr);
         }
-        vec
+        PetscVec::from_raw(vec)
     }
 
     // / Wrapper for [`slepc_sys::MatCreateVecs`]
     // /
-    // / Return left . vector that the matrix vector product can be stored in
-    pub fn create_vec_left(&self) -> slepc_sys::Vec {
+    // / Return left - vector that the matrix vector product can be stored in
+    pub fn create_vec_left(&self) -> PetscVec {
         let (ierr, vec) = unsafe {
             with_uninitialized(|vec| {
                 slepc_sys::MatCreateVecs(self.as_raw(), std::ptr::null_mut(), vec)
@@ -169,6 +182,6 @@ impl<'a> PetscMat<'a> {
         if ierr != 0 {
             println!("error code {} from MatCreateVecs", ierr);
         }
-        vec
+        PetscVec::from_raw(vec)
     }
 }

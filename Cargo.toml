@@ -6,9 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# petsc-sys = { path = "./petsc-sys" }
 slepc-sys = { path = "./slepc-sys" }
+gnuplot = { version = "0.0.37", optional = true }
 
-# [build-dependencies]
-# build-probe-mpi = "0.1"
-# bindgen = "0.55"
+[features]
+default = ["plot"]
+plot = ["gnuplot"]

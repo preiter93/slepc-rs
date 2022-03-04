@@ -2,26 +2,26 @@
 use crate::world::SlepcWorld;
 use crate::{with_uninitialized, with_uninitialized2};
 
-pub struct SlepcEps<'a> {
-    // World communicator
-    pub world: &'a SlepcWorld,
+pub struct SlepcEps {
+    // // World communicator
+    // pub world: &'a SlepcWorld,
     // Pointer to matrix object
     pub eps: *mut slepc_sys::_p_EPS,
 }
 
-impl<'a> SlepcEps<'a> {
-    fn new(world: &'a SlepcWorld, eps: *mut slepc_sys::_p_EPS) -> Self {
-        Self { world, eps }
+impl SlepcEps {
+    fn from_raw(eps: *mut slepc_sys::_p_EPS) -> Self {
+        Self { eps }
     }
 
     /// Wrapper for [`slepc_sys::EPSCreate`]
-    pub fn create(world: &'a SlepcWorld) -> Self {
+    pub fn create<'a>(world: &'a SlepcWorld) -> Self {
         let (ierr, eps) =
             unsafe { with_uninitialized(|eps| slepc_sys::EPSCreate(world.as_raw(), eps)) };
         if ierr != 0 {
             println!("error code {} from EPSCreate", ierr);
         }
-        Self::new(world, eps)
+        Self::from_raw(eps)
     }
 
     /// Return raw `eps`
@@ -96,6 +96,49 @@ impl<'a> SlepcEps<'a> {
         let ierr = unsafe { slepc_sys::EPSSetFromOptions(self.as_raw()) };
         if ierr != 0 {
             println!("error code {} from EPSSetFromOptions", ierr);
+        }
+    }
+
+    /// Wrapper for [`slepc_sys::EPSSetType`]
+    ///
+    /// The parameter 'which' can have one of these values
+    ///
+    /// EPSPOWER       "power"
+    /// EPSSUBSPACE    "subspace"
+    /// EPSARNOLDI     "arnoldi"
+    /// EPSLANCZOS     "lanczos"
+    /// EPSKRYLOVSCHUR "krylovschur"
+    ///
+    /// More solvers:
+    /// <https://slepc.upv.es/documentation/current/docs/manualpages/sys/EPSType.html#EPSType>
+    pub fn set_type(&self, eps_type: &str) {
+        let eps_type_c =
+            std::ffi::CString::new(eps_type).expect("CString::new failed in eigensolver::set_type");
+        let ierr = unsafe { slepc_sys::EPSSetType(self.as_raw(), eps_type_c.as_ptr()) };
+        if ierr != 0 {
+            println!("error code {} from EPSSetType", ierr);
+        }
+    }
+
+    /// Wrapper for [`slepc_sys::EPSSetWhichEigenpairs`]
+    ///
+    /// The parameter 'which' can have one of these values
+    ///
+    /// EPS_LARGEST_MAGNITUDE 	 - largest eigenvalues in magnitude (default)
+    /// EPS_SMALLEST_MAGNITUDE 	 - smallest eigenvalues in magnitude
+    /// EPS_LARGEST_REAL 	 - largest real parts
+    /// EPS_SMALLEST_REAL 	 - smallest real parts
+    /// EPS_LARGEST_IMAGINARY 	 - largest imaginary parts
+    /// EPS_SMALLEST_IMAGINARY 	 - smallest imaginary parts
+    /// EPS_TARGET_MAGNITUDE 	 - eigenvalues closest to the target (in magnitude)
+    /// EPS_TARGET_REAL 	 - eigenvalues with real part closest to target
+    /// EPS_TARGET_IMAGINARY 	 - eigenvalues with imaginary part closest to target
+    /// EPS_ALL 	 - all eigenvalues contained in a given interval or region
+    /// EPS_WHICH_USER 	 - user defined ordering set with EPSSetEigenvalueComparison()
+    pub fn set_which_eigenpairs(&self, which: slepc_sys::EPSWhich) {
+        let ierr = unsafe { slepc_sys::EPSSetWhichEigenpairs(self.as_raw(), which) };
+        if ierr != 0 {
+            println!("error code {} from EPSSetWhichEigenpairs", ierr);
         }
     }
 
