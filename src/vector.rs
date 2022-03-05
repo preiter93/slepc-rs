@@ -13,7 +13,10 @@ impl PetscVec {
         Self { vec_p }
     }
 
-    /// Wrapper for [`slepc_sys::MatCreate`]
+    /// Wrapper for [`slepc_sys::VecCreate`]
+    ///
+    /// Creates an empty vector object. The type can then be set with
+    /// [`Self::set_type`], or [`Self::set_from_options`]..
     pub fn create(world: &SlepcWorld) -> Self {
         let (ierr, vec_p) =
             unsafe { with_uninitialized(|vec_p| slepc_sys::VecCreate(world.as_raw(), vec_p)) };
@@ -29,6 +32,8 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecDuplicate`]
+    ///
+    /// Creates a new vector of the same type as an existing vector.
     pub fn duplicate(&self) -> Self {
         let (ierr, vec_p) =
             unsafe { with_uninitialized(|vec_p| slepc_sys::VecDuplicate(self.as_raw(), vec_p)) };
@@ -49,6 +54,8 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecSetSizes`]
+    ///
+    ///  Sets the local and global sizes, and checks to determine compatibility.
     pub fn set_sizes(
         &mut self,
         local_n: Option<slepc_sys::PetscInt>,
@@ -67,6 +74,8 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecSetValues`]
+    ///
+    ///  Inserts or adds values into certain locations of a vector.
     ///
     /// # Panics
     /// length mismatch of y and ix pr
@@ -88,10 +97,24 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecSetFromOptions`]
+    ///
+    /// Configures the vector from the options database.
     pub fn set_from_options(&mut self) {
         let ierr = unsafe { slepc_sys::VecSetFromOptions(self.as_raw()) };
         if ierr != 0 {
             println!("error code {} from VecSetFromOptions", ierr);
+        }
+    }
+
+    /// Wrapper for [`slepc_sys::VecSetType`]
+    ///
+    /// Builds a vector, for a particular vector implementation.
+    ///
+    /// See `${PETSC_DIR}/include/petscvec.h` for available vector types
+    pub fn set_type(&mut self, vec_type: slepc_sys::VecType) {
+        let ierr = unsafe { slepc_sys::VecSetType(self.as_raw(), vec_type) };
+        if ierr != 0 {
+            println!("error code {} from VecSetType", ierr);
         }
     }
 
@@ -106,6 +129,8 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecSetUp`]
+    ///
+    /// Sets up the internal vector data structures for the later use.
     pub fn set_up(&mut self) {
         let ierr = unsafe { slepc_sys::VecSetUp(self.as_raw()) };
         if ierr != 0 {
@@ -178,6 +203,8 @@ impl PetscVec {
 
     /// Wrapper for [`slepc_sys::VecGetArrayRead`]
     ///
+    /// Get read-only pointer to contiguous array containing this processor's portion of the vector data.
+    ///
     /// # Panics
     /// Casting array size to usize fails
     pub fn get_array_read(&self) -> &[slepc_sys::PetscScalar] {
@@ -193,6 +220,8 @@ impl PetscVec {
 
     /// Wrapper for [`slepc_sys::VecGetArray`]
     ///
+    /// Returns a pointer to a contiguous array that contains this processor's portion of the vector data.
+    ///
     /// # Panics
     /// Casting array size to usize fails
     pub fn get_array<'b>(&mut self) -> &'b mut [slepc_sys::PetscScalar] {
@@ -206,6 +235,7 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecGetOwnershipRange`]
+    ///
     /// Returns the range of matrix rows owned by this processor.
     pub fn get_ownership_range(&self) -> (slepc_sys::PetscInt, slepc_sys::PetscInt) {
         let (ierr, i_start, i_end) = unsafe {
@@ -220,6 +250,8 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecDestroy`]
+    ///
+    /// Frees space taken by a vector.
     pub fn destroy(&self) {
         let ierr = unsafe { slepc_sys::VecDestroy(&mut self.as_raw() as *mut _) };
         if ierr != 0 {

@@ -47,6 +47,9 @@
 //! ## Other similar crates
 //! - <https://gitlab.com/petsc/petsc-rs>
 //! - <https://github.com/tflovorn/slepc-sys>
+//!
+//! ## TODO
+//! - Error Handling
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::return_self_not_must_use)]
 #![allow(clippy::cast_possible_wrap)]

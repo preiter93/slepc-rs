@@ -17,6 +17,9 @@ impl PetscMat {
     }
 
     /// Wrapper for [`slepc_sys::MatCreate`]
+    ///
+    /// Creates a matrix where the type is determined from either a call to [`Self::set_type`]
+    /// or from the options database with a call to [`Self::set_from_options`].
     pub fn create(world: &SlepcWorld) -> Self {
         let (ierr, mat_p) =
             unsafe { with_uninitialized(|mat_p| slepc_sys::MatCreate(world.as_raw(), mat_p)) };
@@ -33,7 +36,7 @@ impl PetscMat {
 
     /// Wrapper for [`slepc_sys::MatSetSizes`]
     ///
-    /// TODO: Let error ...
+    /// Sets the local and global sizes, and checks to determine compatibility
     pub fn set_sizes(
         &mut self,
         local_rows: Option<slepc_sys::PetscInt>,
@@ -88,6 +91,8 @@ impl PetscMat {
     }
 
     /// Wrapper for [`slepc_sys::MatSetFromOptions`]
+    ///
+    /// Creates a matrix where the type is determined from the options database.
     pub fn set_from_options(&mut self) {
         let ierr = unsafe { slepc_sys::MatSetFromOptions(self.as_raw()) };
         if ierr != 0 {
@@ -95,7 +100,21 @@ impl PetscMat {
         }
     }
 
+    /// Wrapper for [`slepc_sys::MatSetType`]
+    ///
+    /// Builds matrix object for a particular matrix type.
+    ///
+    /// See `${PETSC_DIR}/include/petscmat.h` for available methods
+    pub fn set_type(&mut self, mat_type: slepc_sys::MatType) {
+        let ierr = unsafe { slepc_sys::MatSetType(self.as_raw(), mat_type) };
+        if ierr != 0 {
+            println!("error code {} from MatSetUp", ierr);
+        }
+    }
+
     /// Wrapper for [`slepc_sys::MatSetUp`]
+    ///
+    /// Sets up the internal matrix data structures for later use.
     pub fn set_up(&mut self) {
         let ierr = unsafe { slepc_sys::MatSetUp(self.as_raw()) };
         if ierr != 0 {
@@ -132,6 +151,7 @@ impl PetscMat {
     }
 
     /// Wrapper for [`slepc_sys::MatGetOwnershipRange`]
+    ///
     /// Returns the range of matrix rows owned by this processor.
     pub fn get_ownership_range(&self) -> (slepc_sys::PetscInt, slepc_sys::PetscInt) {
         let (ierr, i_start, i_end) = unsafe {
@@ -192,6 +212,8 @@ impl PetscMat {
     }
 
     /// Wrapper for [`slepc_sys::MatDestroy`]
+    ///
+    /// Frees space taken by a matrix.
     pub fn destroy(&self) {
         let ierr = unsafe { slepc_sys::MatDestroy(&mut self.as_raw() as *mut _) };
         if ierr != 0 {
