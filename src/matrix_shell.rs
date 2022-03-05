@@ -1,4 +1,4 @@
-//! Shell-Matrix routines of PETSc matrices
+//! Shell-Matrix routines of `PETSc` matrices
 //!
 //! Here used for matrix free eigenvalue problem.
 use crate::matrix::PetscMat;
@@ -11,8 +11,8 @@ impl PetscMat {
     /// For matrix free eigenvalue problem.
     ///
     /// TODO: Figure out what the void pointer does ...
-    pub fn create_shell<'a>(
-        world: &'a SlepcWorld,
+    pub fn create_shell(
+        world: &SlepcWorld,
         local_rows: slepc_sys::PetscInt,
         local_cols: slepc_sys::PetscInt,
         global_rows: Option<slepc_sys::PetscInt>,
@@ -43,12 +43,15 @@ impl PetscMat {
     ///
     /// We split the `set_operation` into several functions, which must
     /// be chosen depending on the operation signature
-    ///
+    /// ```text
     /// Type A  : fn(Mat, Vec) -> PetscErrorCode
     /// Type B  : fn(Mat, Vec, Vec) -> PetscErrorCode
-    ///
+    /// ```
     /// A used for: `MATOP_GET_DIAGONAL`
     /// B used for: `MATOP_MULT` `MATOP_MULT_TRANSPOSE`
+    ///
+    /// # Panics
+    /// If passed `Matoperation` is not supported
     pub fn shell_set_operation_type_a(
         &self,
         op: slepc_sys::MatOperation,
@@ -73,12 +76,15 @@ impl PetscMat {
     ///
     /// We split the `set_operation` into several functions, which must
     /// be chosen depending on the operation signature
-    ///
+    /// ```text
     /// Type A  : fn(Mat, Vec) -> PetscErrorCode
     /// Type B  : fn(Mat, Vec, Vec) -> PetscErrorCode
-    ///
+    /// ```
     /// A used for: `MATOP_GET_DIAGONAL`
     /// B used for: `MATOP_MULT` `MATOP_MULT_TRANSPOSE`
+    ///
+    /// # Panics
+    /// If passed `Matoperation` is not supported
     pub fn shell_set_operation_type_b(
         &self,
         op: slepc_sys::MatOperation,
@@ -90,7 +96,6 @@ impl PetscMat {
     ) {
         match op {
             slepc_sys::MatOperation::MATOP_MULT | slepc_sys::MatOperation::MATOP_MULT_TRANSPOSE => {
-                ()
             }
             // TODO: Add operations with same signature
             _ => panic!("The op: `{:?}` is not supported by operation_type_b", op),
@@ -106,7 +111,7 @@ impl PetscMat {
 
 /// Used for [`PetscMat::shell_set_operation_type_a`]
 ///
-/// PETSc demands an unsafe C function with the signature
+/// `PETSc` demands an unsafe C function with the signature
 ///
 ///     fn(Mat, Vec) -> PetscErrorCode
 ///
@@ -137,7 +142,7 @@ macro_rules! trampoline_type_a {
 
 /// Used for [`PetscMat::shell_set_operation_type_b`]
 ///
-/// PETSc demands an unsafe C function with the signature
+/// `PETSc` demands an unsafe C function with the signature
 ///
 ///     fn(Mat, Vec, Vec) -> PetscErrorCode
 ///
@@ -191,4 +196,5 @@ macro_rules! trampoline_type_b {
     };
 }
 
+pub use trampoline_type_a;
 pub use trampoline_type_b;

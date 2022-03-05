@@ -1,21 +1,20 @@
-//! Eigenvalue solver of Slepc [`slepc_sys::EPS`]
+//! Eigenvalue solver of `SLEPc` [`slepc_sys::EPS`]
 use crate::world::SlepcWorld;
 use crate::{with_uninitialized, with_uninitialized2};
 
 pub struct SlepcEps {
-    // // World communicator
-    // pub world: &'a SlepcWorld,
-    // Pointer to matrix object
+    // Pointer to EPS object
     pub eps: *mut slepc_sys::_p_EPS,
 }
 
 impl SlepcEps {
+    /// Initialize from raw pointer
     fn from_raw(eps: *mut slepc_sys::_p_EPS) -> Self {
         Self { eps }
     }
 
     /// Wrapper for [`slepc_sys::EPSCreate`]
-    pub fn create<'a>(world: &'a SlepcWorld) -> Self {
+    pub fn create(world: &SlepcWorld) -> Self {
         let (ierr, eps) =
             unsafe { with_uninitialized(|eps| slepc_sys::EPSCreate(world.as_raw(), eps)) };
         if ierr != 0 {
@@ -32,7 +31,7 @@ impl SlepcEps {
     /// Wrapper for [`slepc_sys::EPSSetOperators`]
     ///
     /// Sets the matrices associated with the eigenvalue problem.
-    /// EPSSetOperators(EPS eps,Mat A,Mat B)
+    /// `EPSSetOperators(EPS eps,Mat A,Mat B)`
     pub fn set_operators(&self, mat_a: Option<slepc_sys::Mat>, mat_b: Option<slepc_sys::Mat>) {
         let ierr = unsafe {
             slepc_sys::EPSSetOperators(
@@ -69,7 +68,7 @@ impl SlepcEps {
     /// Wrapper for [`slepc_sys::EPSSetDimensions`]
     ///
     /// Sets the number of eigenvalues (nev) to compute and the dimension of the subspace (ncv).
-    /// EPSSetDimensions(EPS eps,PetscInt nev,PetscInt ncv,PetscInt mpd)
+    /// `EPSSetDimensions(EPS eps,PetscInt nev,PetscInt ncv,PetscInt mpd)`
     ///
     /// Better to leave ncv and mpd untouched
     pub fn set_dimensions(
@@ -102,13 +101,13 @@ impl SlepcEps {
     /// Wrapper for [`slepc_sys::EPSSetType`]
     ///
     /// The parameter 'which' can have one of these values
-    ///
+    /// ```text
     /// EPSPOWER       "power"
     /// EPSSUBSPACE    "subspace"
     /// EPSARNOLDI     "arnoldi"
     /// EPSLANCZOS     "lanczos"
     /// EPSKRYLOVSCHUR "krylovschur"
-    ///
+    /// ```
     /// More solvers:
     /// <https://slepc.upv.es/documentation/current/docs/manualpages/sys/EPSType.html#EPSType>
     pub fn set_type(&self, eps_type: &str) {
@@ -123,18 +122,19 @@ impl SlepcEps {
     /// Wrapper for [`slepc_sys::EPSSetWhichEigenpairs`]
     ///
     /// The parameter 'which' can have one of these values
-    ///
-    /// EPS_LARGEST_MAGNITUDE 	 - largest eigenvalues in magnitude (default)
-    /// EPS_SMALLEST_MAGNITUDE 	 - smallest eigenvalues in magnitude
-    /// EPS_LARGEST_REAL 	 - largest real parts
-    /// EPS_SMALLEST_REAL 	 - smallest real parts
-    /// EPS_LARGEST_IMAGINARY 	 - largest imaginary parts
-    /// EPS_SMALLEST_IMAGINARY 	 - smallest imaginary parts
-    /// EPS_TARGET_MAGNITUDE 	 - eigenvalues closest to the target (in magnitude)
-    /// EPS_TARGET_REAL 	 - eigenvalues with real part closest to target
-    /// EPS_TARGET_IMAGINARY 	 - eigenvalues with imaginary part closest to target
-    /// EPS_ALL 	 - all eigenvalues contained in a given interval or region
-    /// EPS_WHICH_USER 	 - user defined ordering set with EPSSetEigenvalueComparison()
+    /// ```text
+    /// EPS_LARGEST_MAGNITUDE    - largest eigenvalues in magnitude (default)
+    /// EPS_SMALLEST_MAGNITUDE    - smallest eigenvalues in magnitude
+    /// EPS_LARGEST_REAL    - largest real parts
+    /// EPS_SMALLEST_REAL    - smallest real parts
+    /// EPS_LARGEST_IMAGINARY    - largest imaginary parts
+    /// EPS_SMALLEST_IMAGINARY     smallest imaginary parts
+    /// EPS_TARGET_MAGNITUDE    - eigenvalues closest to the target (in magnitude)
+    /// EPS_TARGET_REAL    - eigenvalues with real part closest to target
+    /// EPS_TARGET_IMAGINARY    - eigenvalues with imaginary part closest to target
+    /// EPS_ALL    - all eigenvalues contained in a given interval or region
+    /// EPS_WHICH_USER    - user defined ordering set with EPSSetEigenvalueComparison()
+    /// ```
     pub fn set_which_eigenpairs(&self, which: slepc_sys::EPSWhich) {
         let ierr = unsafe { slepc_sys::EPSSetWhichEigenpairs(self.as_raw(), which) };
         if ierr != 0 {
@@ -175,6 +175,9 @@ impl SlepcEps {
     }
 
     /// Wrapper for [`slepc_sys::EPSGetType`]
+    ///
+    /// # Panics
+    /// Casting `&str` to `CSring` fails
     pub fn get_type(&self) -> &str {
         let (ierr, eps_type) = unsafe {
             with_uninitialized(|eps_type| slepc_sys::EPSGetType(self.as_raw(), eps_type))

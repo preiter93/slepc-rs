@@ -1,6 +1,10 @@
-//! Example from
-//! https://slepc.upv.es/documentation/current/src/eps/tutorials/ex1.c.html
 #![allow(dead_code)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::similar_names)]
 use std::ffi::CString;
 // use std::mem::MaybeUninit;
 use std::os::raw::{c_char, c_int};

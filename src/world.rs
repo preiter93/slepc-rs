@@ -1,4 +1,5 @@
 //! Define slepc world
+#![allow(clippy::module_name_repetitions)]
 use crate::with_uninitialized;
 use slepc_sys::MPI_Comm;
 use std::ffi::CString;
@@ -11,7 +12,11 @@ pub type Rank = c_int;
 pub struct SlepcWorld(MPI_Comm);
 
 impl SlepcWorld {
-    // Initiailue slepc world
+    /// Initiailue slepc world
+    ///
+    /// # Panics
+    /// Unwrap of `CString` fails
+    #[allow(clippy::cast_possible_truncation)]
     pub fn initialize() -> Self {
         // Command line arguments
         let argv = std::env::args().collect::<Vec<String>>();
@@ -70,6 +75,9 @@ impl SlepcWorld {
     /// Wrapper for [`slepc_sys::PetscPrintf`]
     ///
     /// Print a string
+    ///
+    /// # Panics
+    /// Unwrap of `CString` fails
     pub fn print(&self, msg: &str) {
         let msg_c = CString::new(msg).unwrap();
         let ierr = unsafe { slepc_sys::PetscPrintf(self.as_raw(), msg_c.as_ptr()) };

@@ -1,7 +1,7 @@
-//! # `slepc-rs`: SLEPc rust bindings
+//! # `slepc-rs`: `SLEPc` rust bindings
 //!
 //! Currently, this repository is only to demonstrate
-//! how SLEPc can be called from Rust.
+//! how `SLEPc` can be called from Rust.
 //!
 //! ## Dependencies
 //! - `clang`
@@ -10,8 +10,8 @@
 //!
 //! ## Installation
 //!
-//! ### PETSc
-//! Download [download PETSc](https://petsc.org/release/download/). This
+//! ### `PETSc`
+//! Download [download `PETSc`](https://petsc.org/release/download/). This
 //! crate is tested with v.`3.16.4`.
 //!
 //! Install petsc via
@@ -29,8 +29,8 @@
 //! export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PETSC_DIR}/${PETSC_ARCH}/lib
 //! ```
 //!
-//! ### SLEPc
-//! Download [download SLEPc](https://slepc.upv.es/download/). This
+//! ### `SLEPc`
+//! Download [download `SLEPc`](https://slepc.upv.es/download/). This
 //! crate is tested with v.`3.16.2`.
 //!
 //! Install slepc via
@@ -47,9 +47,14 @@
 //! ## Other similar crates
 //! - <https://gitlab.com/petsc/petsc-rs>
 //! - <https://github.com/tflovorn/slepc-sys>
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::return_self_not_must_use)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::similar_names)]
 pub mod eigensolver;
 pub mod matrix;
 pub mod matrix_shell;
+pub mod precondition;
 pub mod vector;
 pub mod world;
 

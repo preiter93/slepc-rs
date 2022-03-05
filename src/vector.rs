@@ -1,22 +1,20 @@
-//! Routines of PETSc vectors [`slepc_sys::Vec`]
+//! Routines of `PETSc` vectors [`slepc_sys::Vec`]
 use crate::world::SlepcWorld;
 use crate::{with_uninitialized, with_uninitialized2};
 
 pub struct PetscVec {
-    // // World communicator
-    // pub world: &'a SlepcWorld,
-    // Pointer to matrix object
+    // Pointer to vector object
     pub vec_p: *mut slepc_sys::_p_Vec,
 }
 
 impl PetscVec {
-    /// Same as `Mat { ... }` but sets all optional params to `None`
+    /// Initialize from raw pointer
     pub fn from_raw(vec_p: *mut slepc_sys::_p_Vec) -> Self {
         Self { vec_p }
     }
 
     /// Wrapper for [`slepc_sys::MatCreate`]
-    pub fn create<'a>(world: &'a SlepcWorld) -> Self {
+    pub fn create(world: &SlepcWorld) -> Self {
         let (ierr, vec_p) =
             unsafe { with_uninitialized(|vec_p| slepc_sys::VecCreate(world.as_raw(), vec_p)) };
         if ierr != 0 {
@@ -71,23 +69,18 @@ impl PetscVec {
     /// Wrapper for [`slepc_sys::VecSetValues`]
     ///
     /// # Panics
-    /// length mismatch of y and ix
+    /// length mismatch of y and ix pr
+    /// casting array size to `slepc_sys::PetscInt` fails
     pub fn set_values(
         &mut self,
         ix: &[slepc_sys::PetscInt],
         y: &[slepc_sys::PetscScalar],
         iora: slepc_sys::InsertMode,
     ) {
-        let ni = ix.len();
-        assert_eq!(y.len(), ni);
+        let ni = slepc_sys::PetscInt::try_from(ix.len()).unwrap();
+        assert_eq!(y.len(), ix.len());
         let ierr = unsafe {
-            slepc_sys::VecSetValues(
-                self.as_raw(),
-                ni as slepc_sys::PetscInt,
-                ix.as_ptr(),
-                y.as_ptr() as *mut _,
-                iora,
-            )
+            slepc_sys::VecSetValues(self.as_raw(), ni, ix.as_ptr(), y.as_ptr() as *mut _, iora)
         };
         if ierr != 0 {
             println!("error code {} from VecSetValues", ierr);
@@ -144,15 +137,14 @@ impl PetscVec {
     /// let (istart, iend) = vec_p.get_ownership_range();
     /// let vec_vals = vec_p.get_values(&(istart..iend).collect::<Vec<i32>>());
     /// ```
+    ///
+    /// # Panics
+    /// Casting array size to `slepc_sys::PetscInt` fails
     pub fn get_values(&self, ix: &[slepc_sys::PetscInt]) -> Vec<slepc_sys::PetscScalar> {
         let mut y = vec![slepc_sys::PetscScalar::default(); ix.len()];
+        let ni = slepc_sys::PetscInt::try_from(ix.len()).unwrap();
         let ierr = unsafe {
-            slepc_sys::VecGetValues(
-                self.as_raw(),
-                ix.len() as slepc_sys::PetscInt,
-                ix.as_ptr(),
-                y[..].as_mut_ptr() as *mut _,
-            )
+            slepc_sys::VecGetValues(self.as_raw(), ni, ix.as_ptr(), y[..].as_mut_ptr().cast())
         };
         if ierr != 0 {
             println!("error code {} from VecGetValues", ierr);
@@ -185,6 +177,9 @@ impl PetscVec {
     }
 
     /// Wrapper for [`slepc_sys::VecGetArrayRead`]
+    ///
+    /// # Panics
+    /// Casting array size to usize fails
     pub fn get_array_read(&self) -> &[slepc_sys::PetscScalar] {
         let (ierr, x) =
             unsafe { with_uninitialized(|x| slepc_sys::VecGetArrayRead(self.as_raw(), x)) };
@@ -192,19 +187,22 @@ impl PetscVec {
             println!("error code {} from VecGetArrayRead", ierr);
         }
         // Get slice from raw pointer
-        let size = self.get_local_size();
-        unsafe { std::slice::from_raw_parts(x, size as usize) }
+        let size = usize::try_from(self.get_local_size()).unwrap();
+        unsafe { std::slice::from_raw_parts(x, size) }
     }
 
     /// Wrapper for [`slepc_sys::VecGetArray`]
+    ///
+    /// # Panics
+    /// Casting array size to usize fails
     pub fn get_array<'b>(&mut self) -> &'b mut [slepc_sys::PetscScalar] {
         let (ierr, x) = unsafe { with_uninitialized(|x| slepc_sys::VecGetArray(self.as_raw(), x)) };
         if ierr != 0 {
             println!("error code {} from VecGetArray", ierr);
         }
         // Get slice from raw pointer
-        let size = self.get_local_size();
-        unsafe { std::slice::from_raw_parts_mut(x, size as usize) }
+        let size = usize::try_from(self.get_local_size()).unwrap();
+        unsafe { std::slice::from_raw_parts_mut(x, size) }
     }
 
     /// Wrapper for [`slepc_sys::VecGetOwnershipRange`]

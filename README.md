@@ -1,9 +1,9 @@
 # slepc-rs
 
-## `slepc-rs`: SLEPc rust bindings
+## `slepc-rs`: `SLEPc` rust bindings
 
 Currently, this repository is only to demonstrate
-how SLEPc can be called from Rust.
+how `SLEPc` can be called from Rust.
 
 ### Dependencies
 - `clang`
@@ -12,8 +12,8 @@ how SLEPc can be called from Rust.
 
 ### Installation
 
-#### PETSc
-Download [download PETSc](https://petsc.org/release/download/). This
+#### `PETSc`
+Download [download `PETSc`](https://petsc.org/release/download/). This
 crate is tested with v.`3.16.4`.
 
 Install petsc via
@@ -31,8 +31,8 @@ export PETSC_ARCH=linux-gnu-real-debug
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PETSC_DIR}/${PETSC_ARCH}/lib
 ```
 
-#### SLEPc
-Download [download SLEPc](https://slepc.upv.es/download/). This
+#### `SLEPc`
+Download [download `SLEPc`](https://slepc.upv.es/download/). This
 crate is tested with v.`3.16.2`.
 
 Install slepc via
@@ -47,5 +47,5 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${SLEPC_DIR}/${PETSC_ARCH}/lib
 ```
 
 ### Other similar crates
-- https://gitlab.com/petsc/petsc-rs
-- https://github.com/tflovorn/slepc-sys
+- <https://gitlab.com/petsc/petsc-rs>
+- <https://github.com/tflovorn/slepc-sys>

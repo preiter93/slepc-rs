@@ -1,4 +1,4 @@
-//! Matrix routines of PETSc matrices [`slepc_sys::Mat`]
+//! Matrix routines of `PETSc` matrices [`slepc_sys::Mat`]
 use crate::vector::PetscVec;
 use crate::world::SlepcWorld;
 use crate::{with_uninitialized, with_uninitialized2};
@@ -11,13 +11,13 @@ pub struct PetscMat {
 }
 
 impl PetscMat {
-    /// Same as `Mat { ... }` but sets all optional params to `None`
+    /// Initialize from raw pointer
     pub fn from_raw(mat_p: *mut slepc_sys::_p_Mat) -> Self {
         Self { mat_p }
     }
 
     /// Wrapper for [`slepc_sys::MatCreate`]
-    pub fn create<'a>(world: &'a SlepcWorld) -> Self {
+    pub fn create(world: &SlepcWorld) -> Self {
         let (ierr, mat_p) =
             unsafe { with_uninitialized(|mat_p| slepc_sys::MatCreate(world.as_raw(), mat_p)) };
         if ierr != 0 {
@@ -59,7 +59,8 @@ impl PetscMat {
     /// By default the values, v, are row-oriented.
     ///
     /// # Panics
-    /// length mismatch of v and n*m
+    /// length mismatch of v and n*m or
+    /// casting array size to `slepc_sys::PetscInt` fails
     pub fn set_values(
         &mut self,
         idxm: &[slepc_sys::PetscInt],
@@ -67,15 +68,15 @@ impl PetscMat {
         v: &[slepc_sys::PetscScalar],
         addv: slepc_sys::InsertMode,
     ) {
-        let m = idxm.len();
-        let n = idxn.len();
-        assert_eq!(v.len(), m * n);
+        let mi = slepc_sys::PetscInt::try_from(idxm.len()).unwrap();
+        let ni = slepc_sys::PetscInt::try_from(idxn.len()).unwrap();
+        assert_eq!(v.len(), idxm.len() * idxn.len());
         let ierr = unsafe {
             slepc_sys::MatSetValues(
                 self.as_raw(),
-                m as slepc_sys::PetscInt,
+                mi,
                 idxm.as_ptr(),
-                n as slepc_sys::PetscInt,
+                ni,
                 idxn.as_ptr(),
                 v.as_ptr() as *mut _,
                 addv,
@@ -103,20 +104,25 @@ impl PetscMat {
     }
 
     /// Wrapper for [`slepc_sys::MatGetValues`]
+    ///
+    /// # Panics
+    /// Casting array size to `slepc_sys::PetscInt` fails
     pub fn get_values(
         &self,
         idxm: &[slepc_sys::PetscInt],
         idxn: &[slepc_sys::PetscInt],
     ) -> Vec<slepc_sys::PetscScalar> {
+        let mi = slepc_sys::PetscInt::try_from(idxm.len()).unwrap();
+        let ni = slepc_sys::PetscInt::try_from(idxn.len()).unwrap();
         let mut v = vec![slepc_sys::PetscScalar::default(); idxm.len() * idxn.len()];
         let ierr = unsafe {
             slepc_sys::MatGetValues(
                 self.as_raw(),
-                idxm.len() as slepc_sys::PetscInt,
+                mi,
                 idxm.as_ptr(),
-                idxn.len() as slepc_sys::PetscInt,
+                ni,
                 idxn.as_ptr(),
-                v[..].as_mut_ptr() as *mut _,
+                v[..].as_mut_ptr().cast(),
             )
         };
         if ierr != 0 {
