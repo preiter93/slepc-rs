@@ -24,8 +24,8 @@ impl PetscMat {
                     world.as_raw(),
                     local_rows,
                     local_cols,
-                    global_rows.unwrap_or(slepc_sys::PETSC_DETERMINE),
-                    global_cols.unwrap_or(slepc_sys::PETSC_DETERMINE),
+                    global_rows.unwrap_or(slepc_sys::PETSC_DETERMINE_INTEGER),
+                    global_cols.unwrap_or(slepc_sys::PETSC_DETERMINE_INTEGER),
                     std::ptr::null_mut(),
                     mat_p,
                 )
@@ -44,41 +44,11 @@ impl PetscMat {
     /// We split the `set_operation` into several functions, which must
     /// be chosen depending on the operation signature
     ///
-    /// Type A  : fn(PetscMat, PetscVec, PetscVec) -> PetscErrorCode
-    ///
-    /// For: `MatMult`
-    pub fn shell_set_operation_type_0(
-        &self,
-        op: slepc_sys::MatOperation,
-        g: unsafe extern "C" fn() -> slepc_sys::PetscErrorCode,
-    ) {
-        match op {
-            slepc_sys::MatOperation::MATOP_MULT => (),
-            // There are more
-            // TODO: use petsc_panic, maybe grab the global comm world from mpi
-            _ => panic!("The given op: `{:?}` is not supported currently", op),
-        }
-        let ierr = unsafe {
-            slepc_sys::MatShellSetOperation(self.as_raw(), op, std::mem::transmute(Some(g)))
-        };
-        if ierr != 0 {
-            println!("error code {} from MatShellSetOperation (Type A)", ierr);
-        }
-        todo!()
-    }
-
-    /// Wrapper for [`slepc_sys::MatShellSetOperation`]
-    ///
-    /// Allows user to set a matrix operation for a shell matrix.
-    ///
-    /// We split the `set_operation` into several functions, which must
-    /// be chosen depending on the operation signature
-    ///
     /// Type A  : fn(Mat, Vec) -> PetscErrorCode
     /// Type B  : fn(Mat, Vec, Vec) -> PetscErrorCode
     ///
     /// A used for: `MATOP_GET_DIAGONAL`
-    /// B used for: `MatMult` `MATOP_MULT_TRANSPOSE`
+    /// B used for: `MATOP_MULT` `MATOP_MULT_TRANSPOSE`
     pub fn shell_set_operation_type_a(
         &self,
         op: slepc_sys::MatOperation,
@@ -108,7 +78,7 @@ impl PetscMat {
     /// Type B  : fn(Mat, Vec, Vec) -> PetscErrorCode
     ///
     /// A used for: `MATOP_GET_DIAGONAL`
-    /// B used for: `MatMult` `MATOP_MULT_TRANSPOSE`
+    /// B used for: `MATOP_MULT` `MATOP_MULT_TRANSPOSE`
     pub fn shell_set_operation_type_b(
         &self,
         op: slepc_sys::MatOperation,
@@ -137,12 +107,15 @@ impl PetscMat {
 /// Used for [`PetscMat::shell_set_operation_type_a`]
 ///
 /// PETSc demands an unsafe C function with the signature
+///
 ///     fn(Mat, Vec) -> PetscErrorCode
+///
 /// but our functions will have the signature
+///
 ///     fn(PetscMat, PetscVec)
 ///
-/// This trampoline macro creates the unsafe C function.
-/// However, it is also possible to do this manually.
+/// This trampoline macro creates the unsafe C function from
+/// a user defined function. (can also be done manually)
 ///
 /// See [`trampoline_type_b`] for example
 #[macro_export]
@@ -165,12 +138,15 @@ macro_rules! trampoline_type_a {
 /// Used for [`PetscMat::shell_set_operation_type_b`]
 ///
 /// PETSc demands an unsafe C function with the signature
+///
 ///     fn(Mat, Vec, Vec) -> PetscErrorCode
+///
 /// but our functions will have the signature
+///
 ///     fn(PetscMat, PetscVec, PetscVec)
 ///
-/// This trampoline macro creates the unsafe C function.
-/// However, it is also possible to do this manually.
+/// This trampoline macro creates the unsafe C function from
+/// a user defined function. (can also be done manually)
 ///
 /// # Use
 /// First define a `my_mat_mult` function. For example
