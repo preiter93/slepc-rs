@@ -92,4 +92,14 @@ impl PetscPC {
         }
         (PetscMat::from_raw(a_mat), PetscMat::from_raw(p_mat))
     }
+
+    /// Wrapper for [`slepc_sys::PCDestroy`]
+    ///
+    /// Frees space taken by a preconditioner object.
+    pub fn destroy(&self) {
+        let ierr = unsafe { slepc_sys::PCDestroy(&mut self.as_raw() as *mut _) };
+        if ierr != 0 {
+            println!("error code {} from PCDestroy", ierr);
+        }
+    }
 }

@@ -158,7 +158,35 @@ fn my_get_diagonal(_mat: &PetscMat, d: &mut PetscVec) {
 //         }
 //     };
 // }
+// use core::ffi::c_void;
+// use slepc_rs::mat_shell::*;
 use slepc_rs::{trampoline_type_a, trampoline_type_b};
+
+// fn main32() {
+//     // let mut my_num: i32 = 10;
+//     // let my_num_ptr: *const i32 = &my_num;
+//     // let my_num_void: *const c_void = unsafe { ref_to_voidp(&my_num) };
+//     // let my_num_2: &i32 = unsafe { voidp_to_ref(&my_num_void) };
+//     // my_num = 3;
+//     // println!("{:?}", my_num_2);
+
+//     // Parameters
+//     let mut n = 1000;
+//     // let mut ctx = &n;
+
+//     println!("Hello World");
+//     let world = SlepcWorld::initialize();
+
+//     let mat = PetscMatShell::create_shell(&world, n, n, Some(n), Some(n), Some(&mut n));
+
+//     // println!("{:?}", mat.ctx);
+//     let ct = mat.shell_get_context();
+//     println!("{:?}", ct);
+
+//     SlepcWorld::finalize();
+// }
+
+type MyContext = (i32, i32);
 
 fn main() {
     // Set openblas num threads to 1, otherwise it might
@@ -166,15 +194,35 @@ fn main() {
     std::env::set_var("OPENBLAS_NUM_THREADS", "1");
 
     // Parameters
-    let n = 1000;
+    let n: slepc_sys::PetscInt = 1000;
+    // let nx: slepc_sys::PetscInt = 100;
 
     println!("Hello World");
     let world = SlepcWorld::initialize();
 
+    let mut ctx: MyContext = (n, n);
+
     // ----------------------------------------------
     //                  Shell Matrix
     // ----------------------------------------------
-    let mat = PetscMat::create_shell(&world, n, n, Some(n), Some(n));
+    // let mat = PetscMat::create_shell(&world, n, n, Some(n), Some(n), None);
+    let mat = PetscMat::create_shell(&world, n, n, Some(n), Some(n), Some(&mut ctx));
+    let ret_ctx: MyContext = mat.shell_get_context();
+    println!("{:?}", ret_ctx);
+    // let ctx = mat.shell_get_context_raw();
+    // // println!("{:?}", &ctx);
+    // let data: usize = unsafe { *(ctx as *mut usize) };
+    // let data: slepc_sys::PetscInt = mat.shell_get_context();
+    // let data: *mut slepc_sys::PetscInt = unsafe { std::mem::transmute(data) };
+    // let data: &slepc_sys::PetscInt = unsafe { &*data };
+    // let data = data as *mut Box<c_int>;
+    //  let data = data as *mut Box<c_int>;
+
+    // let data: &Box<c_int> = unsafe { &*data };
+    // println!("{:?}", *data);
+    // let ctx: *mut c_void = mat.shell_get_context();
+    // println!("{:?}", &ctx);
+    // let data: usize = unsafe { *(ctx as *mut usize) };
 
     let xr = mat.create_vec_left();
     let xi = mat.create_vec_left();

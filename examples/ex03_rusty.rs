@@ -65,7 +65,7 @@ fn main() {
     // ----------------------------------------------
     //                  Shell Matrix
     // ----------------------------------------------
-    let mat = PetscMat::create_shell(&world, n, n, Some(n), Some(n));
+    let mat = PetscMat::create_shell::<u8>(&world, n, n, Some(n), Some(n), None);
 
     let xr = mat.create_vec_left();
     let xi = mat.create_vec_left();

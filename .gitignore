@@ -1,4 +1,6 @@
 /target
-/petsc-sys
+/slepc-sys/src/main.rs
 /slepc-sys/target
 /src/mpi.rs
+/test-bin
+/src/mat_shell.rs

@@ -1,4 +1,5 @@
 //! Eigenvalue solver of `SLEPc` [`slepc_sys::EPS`]
+use crate::spectral_transform::PetscST;
 use crate::world::SlepcWorld;
 use crate::{with_uninitialized, with_uninitialized2};
 
@@ -123,22 +124,33 @@ impl SlepcEps {
     ///
     /// The parameter 'which' can have one of these values
     /// ```text
-    /// EPS_LARGEST_MAGNITUDE    - largest eigenvalues in magnitude (default)
+    /// EPS_LARGEST_MAGNITUDE     - largest eigenvalues in magnitude (default)
     /// EPS_SMALLEST_MAGNITUDE    - smallest eigenvalues in magnitude
-    /// EPS_LARGEST_REAL    - largest real parts
-    /// EPS_SMALLEST_REAL    - smallest real parts
-    /// EPS_LARGEST_IMAGINARY    - largest imaginary parts
-    /// EPS_SMALLEST_IMAGINARY     smallest imaginary parts
-    /// EPS_TARGET_MAGNITUDE    - eigenvalues closest to the target (in magnitude)
-    /// EPS_TARGET_REAL    - eigenvalues with real part closest to target
-    /// EPS_TARGET_IMAGINARY    - eigenvalues with imaginary part closest to target
-    /// EPS_ALL    - all eigenvalues contained in a given interval or region
-    /// EPS_WHICH_USER    - user defined ordering set with EPSSetEigenvalueComparison()
+    /// EPS_LARGEST_REAL          - largest real parts
+    /// EPS_SMALLEST_REAL         - smallest real parts
+    /// EPS_LARGEST_IMAGINARY     - largest imaginary parts
+    /// EPS_SMALLEST_IMAGINARY    - smallest imaginary parts
+    /// EPS_TARGET_MAGNITUDE      - eigenvalues closest to the target (in magnitude)
+    /// EPS_TARGET_REAL           - eigenvalues with real part closest to target
+    /// EPS_TARGET_IMAGINARY      - eigenvalues with imaginary part closest to target
+    /// EPS_ALL                   - all eigenvalues contained in a given interval or region
+    /// EPS_WHICH_USER            - user defined ordering set with EPSSetEigenvalueComparison()
     /// ```
     pub fn set_which_eigenpairs(&self, which: slepc_sys::EPSWhich) {
         let ierr = unsafe { slepc_sys::EPSSetWhichEigenpairs(self.as_raw(), which) };
         if ierr != 0 {
             println!("error code {} from EPSSetWhichEigenpairs", ierr);
+        }
+    }
+
+    /// Wrapper for [`slepc_sys::EPSSetST`]
+    ///
+    /// Associates a spectral transformation [`crate::spectral_transform::PetscST`]  
+    /// to the eigensolver.
+    pub fn set_st(&self, st: &PetscST) {
+        let ierr = unsafe { slepc_sys::EPSSetST(self.as_raw(), st.as_raw()) };
+        if ierr != 0 {
+            println!("error code {} from EPSSetST", ierr);
         }
     }
 
@@ -230,6 +242,18 @@ impl SlepcEps {
             println!("error code {} from EPSGetEigenpair", ierr);
         }
         (kr, ki)
+    }
+
+    /// Wrapper for [`slepc_sys::EPSGetST`]
+    ///
+    /// Obtain the spectral transformation [`crate::spectral_transform::PetscST`]
+    /// object associated to the eigensolver object.
+    pub fn get_st(&self) -> PetscST {
+        let (ierr, st) = unsafe { with_uninitialized(|st| slepc_sys::EPSGetST(self.as_raw(), st)) };
+        if ierr != 0 {
+            println!("error code {} from EPSGetST", ierr);
+        }
+        PetscST::from_raw(st)
     }
 
     /// Wrapper for [`slepc_sys::EPSComputeError`]

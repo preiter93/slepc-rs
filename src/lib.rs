@@ -50,16 +50,24 @@
 //!
 //! ## TODO
 //! - Error Handling
+//!
+//! ## Documentation
+//! - <https://slepc.upv.es/documentation/slepc.pdf>
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::return_self_not_must_use)]
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::similar_names)]
 pub mod eigensolver;
+pub mod linear_system;
+// pub mod mat_shell;
 pub mod matrix;
 pub mod matrix_shell;
-pub mod precondition;
+pub mod preconditioner;
+pub mod spectral_transform;
 pub mod vector;
 pub mod world;
+// Reimport all `slepc_sys` routines
+pub use slepc_sys;
 
 // From `rsmpi` crate
 pub(crate) unsafe fn with_uninitialized<F, U, R>(f: F) -> (R, U)

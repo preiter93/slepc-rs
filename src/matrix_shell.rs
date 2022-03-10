@@ -4,20 +4,54 @@
 use crate::matrix::PetscMat;
 use crate::with_uninitialized;
 use crate::world::SlepcWorld;
+use std::ffi::c_void;
 
 impl PetscMat {
     /// Wrapper for [`slepc_sys::MatCreateShell`]
     ///
     /// For matrix free eigenvalue problem.
     ///
-    /// TODO: Figure out what the void pointer does ...
-    pub fn create_shell(
+    /// Creates a new matrix class for use with a user-defined private
+    ///  data storage format.
+    ///
+    /// Note:
+    /// The context is necessary to retrieve information in operations
+    /// like mat mul, about the size of the matrix etc. If no context is necessary,
+    /// this can be set to None, such that a null pointer is used.
+    /// However, in this case `create_shell`  requires an arbitraty type annotation,
+    /// for example
+    /// ```text
+    /// let n = 100;
+    /// let mat = PetscMat::create_shell::<u8>(&world, n, n, Some(n), Some(n), None);
+    /// ```
+    /// If you want to store a pointer to the size variable `n` as context to use
+    /// later in other operations, you can do
+    /// ```
+    /// use slepc_rs::{world::SlepcWorld, matrix::PetscMat};
+    /// // Initialize slepc
+    /// let n = 100;
+    /// let world = SlepcWorld::initialize();
+    ///
+    /// // Set context
+    /// let mut ctx: (i32, i32) = (n, n);
+    ///
+    /// // Initialize shell matrix
+    /// let mat = PetscMat::create_shell(&world, n, n, Some(n), Some(n), Some(&mut ctx));
+    ///
+    /// // Get context
+    /// let ctx_: (i32, i32) = mat.shell_get_context();
+    ///
+    /// assert_eq!(ctx, ctx_)
+    /// ```
+    pub fn create_shell<T>(
         world: &SlepcWorld,
         local_rows: slepc_sys::PetscInt,
         local_cols: slepc_sys::PetscInt,
         global_rows: Option<slepc_sys::PetscInt>,
         global_cols: Option<slepc_sys::PetscInt>,
+        ctx: Option<&mut T>,
     ) -> Self {
+        let ctx_void = ctx.map_or(std::ptr::null_mut(), |x| unsafe { ref_to_voidp(x) });
         let (ierr, mat_p) = unsafe {
             with_uninitialized(|mat_p| {
                 slepc_sys::MatCreateShell(
@@ -26,7 +60,7 @@ impl PetscMat {
                     local_cols,
                     global_rows.unwrap_or(slepc_sys::PETSC_DETERMINE_INTEGER),
                     global_cols.unwrap_or(slepc_sys::PETSC_DETERMINE_INTEGER),
-                    std::ptr::null_mut(),
+                    ctx_void,
                     mat_p,
                 )
             })
@@ -35,6 +69,22 @@ impl PetscMat {
             println!("error code {} from MatCreateShell", ierr);
         }
         Self::from_raw(mat_p)
+    }
+
+    /// Wrapper for [`slepc_sys::MatShellGetContext`]
+    ///
+    /// Returns the user-provided context associated with a shell matrix.
+    /// -> &'a mut T
+    pub fn shell_get_context<T: std::marker::Copy>(&self) -> T {
+        let mut ctx_void = std::mem::MaybeUninit::<*mut ::std::os::raw::c_void>::uninit();
+        let ierr =
+            unsafe { slepc_sys::MatShellGetContext(self.as_raw(), ctx_void.as_mut_ptr().cast()) };
+        if ierr != 0 {
+            println!("error code {} from MatShellGetContext", ierr);
+        }
+        let ctx_void = unsafe { ctx_void.assume_init() };
+        let ctx: &T = unsafe { voidp_to_ref(&ctx_void) };
+        *ctx
     }
 
     /// Wrapper for [`slepc_sys::MatShellSetOperation`]
@@ -112,13 +162,13 @@ impl PetscMat {
 /// Used for [`PetscMat::shell_set_operation_type_a`]
 ///
 /// `PETSc` demands an unsafe C function with the signature
-///
+/// ```text
 ///     fn(Mat, Vec) -> PetscErrorCode
-///
+/// ```
 /// but our functions will have the signature
-///
+/// ```text
 ///     fn(PetscMat, PetscVec)
-///
+/// ```
 /// This trampoline macro creates the unsafe C function from
 /// a user defined function. (can also be done manually)
 ///
@@ -129,9 +179,9 @@ macro_rules! trampoline_type_a {
         $r: ident, $c: ident
     ) => {
         pub unsafe extern "C" fn $c(
-            mat: slepc_sys::Mat,
-            x: slepc_sys::Vec,
-        ) -> slepc_sys::PetscErrorCode {
+            mat: $crate::slepc_sys::Mat,
+            x: $crate::slepc_sys::Vec,
+        ) -> $crate::slepc_sys::PetscErrorCode {
             let r_mat = PetscMat::from_raw(mat);
             let mut r_x = PetscVec::from_raw(x);
             $r(&r_mat, &mut r_x);
@@ -143,13 +193,13 @@ macro_rules! trampoline_type_a {
 /// Used for [`PetscMat::shell_set_operation_type_b`]
 ///
 /// `PETSc` demands an unsafe C function with the signature
-///
+/// ```text
 ///     fn(Mat, Vec, Vec) -> PetscErrorCode
-///
+/// ```
 /// but our functions will have the signature
-///
+/// ```text
 ///     fn(PetscMat, PetscVec, PetscVec)
-///
+/// ```
 /// This trampoline macro creates the unsafe C function from
 /// a user defined function. (can also be done manually)
 ///
@@ -183,10 +233,10 @@ macro_rules! trampoline_type_b {
         $r: ident, $c: ident
     ) => {
         pub unsafe extern "C" fn $c(
-            mat: slepc_sys::Mat,
-            x: slepc_sys::Vec,
-            y: slepc_sys::Vec,
-        ) -> slepc_sys::PetscErrorCode {
+            mat: $crate::slepc_sys::Mat,
+            x: $crate::slepc_sys::Vec,
+            y: $crate::slepc_sys::Vec,
+        ) -> $crate::slepc_sys::PetscErrorCode {
             let r_mat = PetscMat::from_raw(mat);
             let r_x = PetscVec::from_raw(x);
             let mut r_y = PetscVec::from_raw(y);
@@ -198,3 +248,15 @@ macro_rules! trampoline_type_b {
 
 pub use trampoline_type_a;
 pub use trampoline_type_b;
+
+/// <https://users.rust-lang.org/t/converting-between-references-and-c-void/39599>
+#[allow(dead_code)]
+unsafe fn voidp_to_ref<'a, T: 'a>(&p: &'a *mut c_void) -> &'a T {
+    &*p.cast()
+}
+
+/// <https://users.rust-lang.org/t/converting-between-references-and-c-void/39599>
+#[allow(dead_code)]
+unsafe fn ref_to_voidp<T>(r: &mut T) -> *mut c_void {
+    (r as *mut T).cast::<std::ffi::c_void>()
+}

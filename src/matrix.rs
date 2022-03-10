@@ -165,6 +165,30 @@ impl PetscMat {
         (i_start, i_end)
     }
 
+    /// Wrapper for [`slepc_sys::MatGetLocalSize`]
+    ///
+    /// Returns the number of local rows and local columns of a matrix.
+    pub fn get_local_size(&self) -> (slepc_sys::PetscInt, slepc_sys::PetscInt) {
+        let (ierr, m, n) =
+            unsafe { with_uninitialized2(|m, n| slepc_sys::MatGetLocalSize(self.as_raw(), m, n)) };
+        if ierr != 0 {
+            println!("error code {} from MatGetLocalSize", ierr);
+        }
+        (m, n)
+    }
+
+    /// Wrapper for [`slepc_sys::MatGetSize`]
+    ///
+    /// Returns the numbers of rows and columns in a matrix.
+    pub fn get_size(&self) -> (slepc_sys::PetscInt, slepc_sys::PetscInt) {
+        let (ierr, m, n) =
+            unsafe { with_uninitialized2(|m, n| slepc_sys::MatGetSize(self.as_raw(), m, n)) };
+        if ierr != 0 {
+            println!("error code {} from MatGetSize", ierr);
+        }
+        (m, n)
+    }
+
     /// Wrapper for [`slepc_sys::MatAssemblyBegin`]
     pub fn assembly_begin(&self, assembly_type: slepc_sys::MatAssemblyType) {
         let ierr = unsafe { slepc_sys::MatAssemblyBegin(self.as_raw(), assembly_type) };
