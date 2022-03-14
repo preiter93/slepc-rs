@@ -70,6 +70,33 @@ pub mod world;
 // Reimport all `slepc_sys` routines
 pub use slepc_sys;
 
+#[derive(Debug, Clone)]
+pub struct PetscError {
+    pub(crate) ierr: slepc_sys::PetscErrorCode,
+}
+
+impl std::fmt::Display for PetscError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Error code {}.", self.ierr)
+    }
+}
+
+/// `PETSc` result
+pub type Result<T> = std::result::Result<T, PetscError>;
+
+/// Check  `PETSc` Error
+/// Todo: More checks
+///
+/// # Errors
+/// If ierr is non zero
+pub fn check_error(ierr: slepc_sys::PetscErrorCode) -> Result<()> {
+    if ierr == 0 {
+        Ok(())
+    } else {
+        Err(PetscError { ierr })
+    }
+}
+
 // From `rsmpi` crate
 pub(crate) unsafe fn with_uninitialized<F, U, R>(f: F) -> (R, U)
 where

@@ -8,7 +8,9 @@ edition = "2021"
 [dependencies]
 slepc-sys = { path = "./slepc-sys" }
 gnuplot = { version = "0.0.37", optional = true }
+ndarray = { version = "0.15", optional = true }
 
 [features]
-default = ["with_gnuplot"]
+default = ["with_gnuplot", "with_ndarray"]
 with_gnuplot = ["gnuplot"]
+with_ndarray = ["ndarray"]

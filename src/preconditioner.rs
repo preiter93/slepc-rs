@@ -1,7 +1,7 @@
 //! Preconditioner routines of `PETSc` preconditioners [`slepc_sys::PC`]
 use crate::matrix::PetscMat;
 use crate::world::SlepcWorld;
-use crate::{with_uninitialized, with_uninitialized2};
+use crate::{check_error, with_uninitialized, with_uninitialized2, Result};
 
 pub struct PetscPC {
     // Pointer to PC object
@@ -20,30 +20,40 @@ impl PetscPC {
     }
 
     /// Wrapper for [`slepc_sys::PCCreate`]
-    pub fn create(world: &SlepcWorld) -> Self {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn create(world: &SlepcWorld) -> Result<Self> {
         let (ierr, pc_p) =
             unsafe { with_uninitialized(|pc_p| slepc_sys::PCCreate(world.as_raw(), pc_p)) };
-        if ierr != 0 {
-            println!("error code {} from PCCreate", ierr);
-        }
-        Self::from_raw(pc_p)
+        check_error(ierr)?;
+        Ok(Self::from_raw(pc_p))
     }
 
     /// Wrapper for [`slepc_sys::PCSetType`]
     ///
     /// Builds `PC` for a particular preconditioner type
-    pub fn set_type(&mut self, pc_type: slepc_sys::PCType) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_type(&mut self, pc_type: slepc_sys::PCType) -> Result<()> {
         let ierr = unsafe { slepc_sys::PCSetType(self.as_raw(), pc_type) };
-        if ierr != 0 {
-            println!("error code {} from PCSetType", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::PCSetOperators`]
     ///
     /// Sets the matrix associated with the linear system and a
     /// (possibly) different one associated with the preconditioner.
-    pub fn set_operators(&mut self, a_mat: Option<PetscMat>, p_mat: Option<PetscMat>) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_operators(
+        &mut self,
+        a_mat: Option<PetscMat>,
+        p_mat: Option<PetscMat>,
+    ) -> Result<()> {
         let ierr = unsafe {
             slepc_sys::PCSetOperators(
                 self.as_raw(),
@@ -51,46 +61,50 @@ impl PetscPC {
                 p_mat.map_or(std::ptr::null_mut(), |x| x.as_raw()),
             )
         };
-        if ierr != 0 {
-            println!("error code {} from PCSetOperators", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::PCSetFromOptions`]
     ///
     /// Sets `PC` options from the options database. This routine must be called before
     /// `set_up` if the user is to be allowed to set the preconditioner method.
-    pub fn set_from_options(&mut self) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_from_options(&mut self) -> Result<()> {
         let ierr = unsafe { slepc_sys::PCSetFromOptions(self.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from PCSetFromOptions", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::PCSetUp`]
     ///
     /// Prepares for the use of a preconditioner.
-    pub fn set_up(&mut self) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_up(&mut self) -> Result<()> {
         let ierr = unsafe { slepc_sys::PCSetUp(self.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from PCSetUp", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::PCGetOperators`]
     ///
     /// Gets the matrix associated with the linear system and
     /// possibly a different one associated with the preconditioner.
-    pub fn get_operators(&mut self) -> (PetscMat, PetscMat) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_operators(&mut self) -> Result<(PetscMat, PetscMat)> {
         let (ierr, a_mat, p_mat) = unsafe {
             with_uninitialized2(|a_mat, p_mat| {
                 slepc_sys::PCGetOperators(self.as_raw(), a_mat, p_mat)
             })
         };
-        if ierr != 0 {
-            println!("error code {} from PCSetOperators", ierr);
-        }
-        (PetscMat::from_raw(a_mat), PetscMat::from_raw(p_mat))
+        check_error(ierr)?;
+        Ok((PetscMat::from_raw(a_mat), PetscMat::from_raw(p_mat)))
     }
 }
 

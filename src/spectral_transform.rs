@@ -4,8 +4,8 @@
 //! <https://slepc.upv.es/documentation/slepc.pdf>
 use crate::linear_system::PetscKSP;
 use crate::vector::PetscVec;
-use crate::with_uninitialized;
 use crate::world::SlepcWorld;
+use crate::{check_error, with_uninitialized, Result};
 
 pub struct PetscST {
     // Pointer to ST object
@@ -24,13 +24,14 @@ impl PetscST {
     }
 
     /// Wrapper for [`slepc_sys::STCreate`]
-    pub fn create(world: &SlepcWorld) -> Self {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn create(world: &SlepcWorld) -> Result<Self> {
         let (ierr, st_p) =
             unsafe { with_uninitialized(|st_p| slepc_sys::STCreate(world.as_raw(), st_p)) };
-        if ierr != 0 {
-            println!("error code {} from PCCreate", ierr);
-        }
-        Self::from_raw(st_p)
+        check_error(ierr)?;
+        Ok(Self::from_raw(st_p))
     }
 
     /// Wrapper for [`slepc_sys::STSetType`]
@@ -45,41 +46,49 @@ impl PetscST {
     /// STPRECOND     "precond"
     /// STFILTER      "filter"
     /// ```
-    pub fn set_type(&mut self, st_type: slepc_sys::STType) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_type(&mut self, st_type: slepc_sys::STType) -> Result<()> {
         let ierr = unsafe { slepc_sys::STSetType(self.as_raw(), st_type) };
-        if ierr != 0 {
-            println!("error code {} from STSetType", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::STSetShift`]
     ///
     /// Sets the shift associated with the spectral transformation.
-    pub fn set_shift(&mut self, shift: slepc_sys::PetscScalar) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_shift(&mut self, shift: slepc_sys::PetscScalar) -> Result<()> {
         let ierr = unsafe { slepc_sys::STSetShift(self.as_raw(), shift) };
-        if ierr != 0 {
-            println!("error code {} from STSetShift", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::STSetKSP`]
     ///
     /// Sets the KSP object associated with the spectral transformation.
-    pub fn set_ksp(&mut self, ksp: &PetscKSP) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_ksp(&mut self, ksp: &PetscKSP) -> Result<()> {
         let ierr = unsafe { slepc_sys::STSetKSP(self.as_raw(), ksp.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from STSetKSP", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::STSetUp`]
     ///
     /// Prepares for the use of a spectral transformation.
-    pub fn set_up(&mut self) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_up(&mut self) -> Result<()> {
         let ierr = unsafe { slepc_sys::STSetUp(self.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from STSetUp", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::STApply`]
@@ -87,43 +96,49 @@ impl PetscST {
     /// Applies the spectral transformation operator to a vector,
     /// for instance  (A - sB)^-1 B in the case of the shift-and-invert
     /// transformation and generalized eigenproblem.
-    pub fn apply(&mut self, x: &PetscVec, y: &mut PetscVec) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn apply(&mut self, x: &PetscVec, y: &mut PetscVec) -> Result<()> {
         let ierr = unsafe { slepc_sys::STApply(self.as_raw(), x.as_raw(), y.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from STApply", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::STGetType`]
     ///
     /// # Panics
     /// Casting `&str` to `CSring` fails
-    pub fn get_type(&self) -> &str {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_type(&self) -> Result<&str> {
         let (ierr, st_type) =
             unsafe { with_uninitialized(|st_type| slepc_sys::STGetType(self.as_raw(), st_type)) };
-        if ierr != 0 {
-            println!("error code {} from STGetType", ierr);
-        }
+        check_error(ierr)?;
         // Transform c string to rust string
-        unsafe { std::ffi::CStr::from_ptr(st_type).to_str().unwrap() }
+        Ok(unsafe { std::ffi::CStr::from_ptr(st_type).to_str().unwrap() })
     }
 
     /// Wrapper for [`slepc_sys::STGetKSP`]
     ///
     /// Gets the KSP object associated with the spectral transformation.
-    pub fn get_ksp(&self) -> PetscKSP {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_ksp(&self) -> Result<PetscKSP> {
         let (ierr, ksp) =
             unsafe { with_uninitialized(|ksp| slepc_sys::STGetKSP(self.as_raw(), ksp)) };
-        if ierr != 0 {
-            println!("error code {} from STGetKSP", ierr);
-        }
-        PetscKSP::from_raw(ksp)
+        check_error(ierr)?;
+        Ok(PetscKSP::from_raw(ksp))
     }
+}
 
+impl Drop for PetscST {
     /// Wrapper for [`slepc_sys::STDestroy`]
     ///
-    /// Frees space taken by a spectral transform object.
-    pub fn destroy(&self) {
+    /// Frees space taken by a vector.
+    fn drop(&mut self) {
         let ierr = unsafe { slepc_sys::STDestroy(&mut self.as_raw() as *mut _) };
         if ierr != 0 {
             println!("error code {} from STDestroy", ierr);

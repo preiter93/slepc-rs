@@ -1,7 +1,7 @@
 //! Eigenvalue solver of `SLEPc` [`slepc_sys::EPS`]
 use crate::spectral_transform::PetscST;
 use crate::world::SlepcWorld;
-use crate::{with_uninitialized, with_uninitialized2};
+use crate::{check_error, with_uninitialized, with_uninitialized2, Result};
 
 pub struct SlepcEps {
     // Pointer to EPS object
@@ -15,13 +15,17 @@ impl SlepcEps {
     }
 
     /// Wrapper for [`slepc_sys::EPSCreate`]
-    pub fn create(world: &SlepcWorld) -> Self {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn create(world: &SlepcWorld) -> Result<Self> {
         let (ierr, eps) =
             unsafe { with_uninitialized(|eps| slepc_sys::EPSCreate(world.as_raw(), eps)) };
         if ierr != 0 {
             println!("error code {} from EPSCreate", ierr);
         }
-        Self::from_raw(eps)
+        check_error(ierr)?;
+        Ok(Self::from_raw(eps))
     }
 
     /// Return raw `eps`
@@ -33,7 +37,14 @@ impl SlepcEps {
     ///
     /// Sets the matrices associated with the eigenvalue problem.
     /// `EPSSetOperators(EPS eps,Mat A,Mat B)`
-    pub fn set_operators(&self, mat_a: Option<slepc_sys::Mat>, mat_b: Option<slepc_sys::Mat>) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_operators(
+        &self,
+        mat_a: Option<slepc_sys::Mat>,
+        mat_b: Option<slepc_sys::Mat>,
+    ) -> Result<()> {
         let ierr = unsafe {
             slepc_sys::EPSSetOperators(
                 self.as_raw(),
@@ -41,19 +52,21 @@ impl SlepcEps {
                 mat_b.unwrap_or(std::ptr::null_mut()),
             )
         };
-        if ierr != 0 {
-            println!("error code {} from EPSSetOperators", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSSetTolerances`]
     ///
     /// Set specific solver options
+    ///
+    /// # Errors
+    /// `PETSc` returns error
     pub fn set_tolerances(
         &mut self,
         tol: Option<slepc_sys::PetscReal>,
         maxit: Option<slepc_sys::PetscInt>,
-    ) {
+    ) -> Result<()> {
         let ierr = unsafe {
             slepc_sys::EPSSetTolerances(
                 self.as_raw(),
@@ -61,9 +74,8 @@ impl SlepcEps {
                 maxit.unwrap_or(slepc_sys::PETSC_DEFAULT_INTEGER),
             )
         };
-        if ierr != 0 {
-            println!("error code {} from EPSSetTolerances", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSSetDimensions`]
@@ -72,12 +84,15 @@ impl SlepcEps {
     /// `EPSSetDimensions(EPS eps,PetscInt nev,PetscInt ncv,PetscInt mpd)`
     ///
     /// Better to leave ncv and mpd untouched
+    ///
+    /// # Errors
+    /// `PETSc` returns error
     pub fn set_dimensions(
         &mut self,
         nev: Option<slepc_sys::PetscInt>,
         ncv: Option<slepc_sys::PetscInt>,
         mpd: Option<slepc_sys::PetscInt>,
-    ) {
+    ) -> Result<()> {
         let ierr = unsafe {
             slepc_sys::EPSSetDimensions(
                 self.as_raw(),
@@ -86,17 +101,18 @@ impl SlepcEps {
                 mpd.unwrap_or(slepc_sys::PETSC_DEFAULT_INTEGER),
             )
         };
-        if ierr != 0 {
-            println!("error code {} from EPSSetDimensions", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSSetFromOptions`]
-    pub fn set_from_options(&self) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_from_options(&self) -> Result<()> {
         let ierr = unsafe { slepc_sys::EPSSetFromOptions(self.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from EPSSetFromOptions", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSSetType`]
@@ -111,13 +127,15 @@ impl SlepcEps {
     /// ```
     /// More solvers:
     /// <https://slepc.upv.es/documentation/current/docs/manualpages/sys/EPSType.html#EPSType>
-    pub fn set_type(&self, eps_type: &str) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_type(&self, eps_type: &str) -> Result<()> {
         let eps_type_c =
             std::ffi::CString::new(eps_type).expect("CString::new failed in eigensolver::set_type");
         let ierr = unsafe { slepc_sys::EPSSetType(self.as_raw(), eps_type_c.as_ptr()) };
-        if ierr != 0 {
-            println!("error code {} from EPSSetType", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSSetWhichEigenpairs`]
@@ -136,141 +154,158 @@ impl SlepcEps {
     /// EPS_ALL                   - all eigenvalues contained in a given interval or region
     /// EPS_WHICH_USER            - user defined ordering set with EPSSetEigenvalueComparison()
     /// ```
-    pub fn set_which_eigenpairs(&self, which: slepc_sys::EPSWhich) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_which_eigenpairs(&self, which: slepc_sys::EPSWhich) -> Result<()> {
         let ierr = unsafe { slepc_sys::EPSSetWhichEigenpairs(self.as_raw(), which) };
-        if ierr != 0 {
-            println!("error code {} from EPSSetWhichEigenpairs", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSSetST`]
     ///
     /// Associates a spectral transformation [`crate::spectral_transform::PetscST`]  
     /// to the eigensolver.
-    pub fn set_st(&self, st: &PetscST) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_st(&self, st: &PetscST) -> Result<()> {
         let ierr = unsafe { slepc_sys::EPSSetST(self.as_raw(), st.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from EPSSetST", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSSolve`]
     ///
     /// Solve the eigensystem
-    pub fn solve(&self) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn solve(&self) -> Result<()> {
         let ierr = unsafe { slepc_sys::EPSSolve(self.as_raw()) };
-        if ierr != 0 {
-            println!("error code {} from EPSSolve", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 
     /// Wrapper for [`slepc_sys::EPSGetTolerances`]
-    pub fn get_tolerances(&self) -> (slepc_sys::PetscReal, slepc_sys::PetscInt) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_tolerances(&self) -> Result<(slepc_sys::PetscReal, slepc_sys::PetscInt)> {
         let (ierr, tol, maxit) = unsafe {
             with_uninitialized2(|tol, maxit| slepc_sys::EPSGetTolerances(self.as_raw(), tol, maxit))
         };
-        if ierr != 0 {
-            println!("error code {} from EPSGetTolerances", ierr);
-        }
-        (tol, maxit)
+        check_error(ierr)?;
+        Ok((tol, maxit))
     }
 
     /// Wrapper for [`slepc_sys::EPSGetIterationNumber`]
-    pub fn get_iteration_number(&self) -> slepc_sys::PetscInt {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_iteration_number(&self) -> Result<slepc_sys::PetscInt> {
         let (ierr, its) = unsafe {
             with_uninitialized(|its| slepc_sys::EPSGetIterationNumber(self.as_raw(), its))
         };
-        if ierr != 0 {
-            println!("error code {} from EPSGetTolerances", ierr);
-        }
-        its
+        check_error(ierr)?;
+        Ok(its)
     }
 
     /// Wrapper for [`slepc_sys::EPSGetType`]
     ///
     /// # Panics
     /// Casting `&str` to `CSring` fails
-    pub fn get_type(&self) -> &str {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_type(&self) -> Result<&str> {
         let (ierr, eps_type) = unsafe {
             with_uninitialized(|eps_type| slepc_sys::EPSGetType(self.as_raw(), eps_type))
         };
         if ierr != 0 {
             println!("error code {} from EPSGetType", ierr);
         }
+        check_error(ierr)?;
         // Transform c string to rust string
-        unsafe { std::ffi::CStr::from_ptr(eps_type).to_str().unwrap() }
+        Ok(unsafe { std::ffi::CStr::from_ptr(eps_type).to_str().unwrap() })
     }
 
     /// Wrapper for [`slepc_sys::EPSGetConverged`]
-    pub fn get_converged(&self) -> slepc_sys::PetscInt {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_converged(&self) -> Result<slepc_sys::PetscInt> {
         let (ierr, nconv) =
             unsafe { with_uninitialized(|nconv| slepc_sys::EPSGetConverged(self.as_raw(), nconv)) };
-        if ierr != 0 {
-            println!("error code {} from EPSGetConverged", ierr);
-        }
-        nconv
+        check_error(ierr)?;
+        Ok(nconv)
     }
 
     /// Wrapper for [`slepc_sys::EPSGetDimensions`]
     ///
     /// TODO: Return also mpd if necessary
-    pub fn get_dimensions(&self) -> (slepc_sys::PetscInt, slepc_sys::PetscInt) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_dimensions(&self) -> Result<(slepc_sys::PetscInt, slepc_sys::PetscInt)> {
         let (ierr, nev, ncv) = unsafe {
             with_uninitialized2(|nev, ncv| {
                 slepc_sys::EPSGetDimensions(self.as_raw(), nev, ncv, std::ptr::null_mut())
             })
         };
-        if ierr != 0 {
-            println!("error code {} from EPSGetDimensions", ierr);
-        }
-        (nev, ncv)
+        check_error(ierr)?;
+        Ok((nev, ncv))
     }
 
     /// Wrapper for [`slepc_sys::EPSGetEigenpair`]
+    ///
+    /// # Errors
+    /// `PETSc` returns error
     pub fn get_eigenpair(
         &self,
         i: slepc_sys::PetscInt,
         xr: slepc_sys::Vec,
         xi: slepc_sys::Vec,
-    ) -> (slepc_sys::PetscScalar, slepc_sys::PetscScalar) {
+    ) -> Result<(slepc_sys::PetscScalar, slepc_sys::PetscScalar)> {
         let (ierr, kr, ki) = unsafe {
             with_uninitialized2(|kr, ki| {
                 slepc_sys::EPSGetEigenpair(self.as_raw(), i, kr, ki, xr, xi)
             })
         };
-        if ierr != 0 {
-            println!("error code {} from EPSGetEigenpair", ierr);
-        }
-        (kr, ki)
+        check_error(ierr)?;
+        Ok((kr, ki))
     }
 
     /// Wrapper for [`slepc_sys::EPSGetST`]
     ///
     /// Obtain the spectral transformation [`crate::spectral_transform::PetscST`]
     /// object associated to the eigensolver object.
-    pub fn get_st(&self) -> PetscST {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn get_st(&self) -> Result<PetscST> {
         let (ierr, st) = unsafe { with_uninitialized(|st| slepc_sys::EPSGetST(self.as_raw(), st)) };
-        if ierr != 0 {
-            println!("error code {} from EPSGetST", ierr);
-        }
-        PetscST::from_raw(st)
+        check_error(ierr)?;
+        Ok(PetscST::from_raw(st))
     }
 
     /// Wrapper for [`slepc_sys::EPSComputeError`]
+    ///
+    /// # Errors
+    /// `PETSc` returns error
     pub fn compute_error(
         &self,
         i: slepc_sys::PetscInt,
         error_type: slepc_sys::EPSErrorType,
-    ) -> slepc_sys::PetscReal {
+    ) -> Result<slepc_sys::PetscReal> {
         let (ierr, error) = unsafe {
             with_uninitialized(|error| {
                 slepc_sys::EPSComputeError(self.as_raw(), i, error_type, error)
             })
         };
-        if ierr != 0 {
-            println!("error code {} from EPSComputeError", ierr);
-        }
-        error
+        check_error(ierr)?;
+        Ok(error)
     }
 }
 

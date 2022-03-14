@@ -60,6 +60,7 @@ use slepc_rs::eigensolver::SlepcEps;
 use slepc_rs::matrix::PetscMat;
 use slepc_rs::vector::PetscVec;
 use slepc_rs::world::SlepcWorld;
+use slepc_rs::Result;
 
 // Requested tolerance
 const EPS_TOL: slepc_sys::PetscReal = 1e-5;
@@ -69,10 +70,10 @@ const EPS_MAXIT: slepc_sys::PetscInt = 50000;
 const EPS_NEV: slepc_sys::PetscInt = 2;
 
 fn my_mat_mult(_mat: &PetscMat, x: &PetscVec, y: &mut PetscVec) {
-    let x_view = x.get_array_read();
+    let x_view = x.get_array_read().unwrap();
     // println!("{:?}", x_view.len());
-    let y_view_mut = y.get_array();
-    let (i_start, i_end) = x.get_ownership_range();
+    let y_view_mut = y.get_array().unwrap();
+    let (i_start, i_end) = x.get_ownership_range().unwrap();
     let n = i_end - i_start;
     assert!(
         n as usize == x_view.len(),
@@ -93,7 +94,7 @@ fn my_mat_mult(_mat: &PetscMat, x: &PetscVec, y: &mut PetscVec) {
 }
 
 fn my_get_diagonal(_mat: &PetscMat, d: &mut PetscVec) {
-    let d_view_mut = d.get_array();
+    let d_view_mut = d.get_array().unwrap();
     for (_, d_i) in d_view_mut.iter_mut().enumerate() {
         *d_i = 1.;
     }
@@ -101,7 +102,9 @@ fn my_get_diagonal(_mat: &PetscMat, d: &mut PetscVec) {
 
 type MyContext = (i32, i32);
 
-fn main() {
+use ndarray::Array2;
+
+fn main() -> Result<()> {
     // Set openblas num threads to 1, otherwise it might
     // conflict with mpi parallelization
     std::env::set_var("OPENBLAS_NUM_THREADS", "1");
@@ -111,7 +114,7 @@ fn main() {
     // let nx: slepc_sys::PetscInt = 100;
 
     println!("Hello World");
-    let world = SlepcWorld::initialize();
+    let world = SlepcWorld::initialize()?;
 
     let mut ctx: MyContext = (n, n);
 
@@ -119,9 +122,9 @@ fn main() {
     //                  Shell Matrix
     // ----------------------------------------------
     // let mat = PetscMat::create_shell::<MyContext>(&world, n, n, Some(n), Some(n), None);
-    let mat = PetscMat::create_shell(&world, None, None, Some(n), Some(n), Some(&mut ctx));
+    let mat = PetscMat::create_shell(&world, None, None, Some(n), Some(n), Some(&mut ctx))?;
 
-    let ret_ctx: MyContext = mat.shell_get_context().expect("No context found");
+    let ret_ctx: MyContext = mat.shell_get_context()?.expect("No context found");
     // let ctx = mat.shell_get_context_raw();
     // // println!("{:?}", &ctx);
     // let data: usize = unsafe { *(ctx as *mut usize) };
@@ -137,83 +140,86 @@ fn main() {
     // println!("{:?}", &ctx);
     // let data: usize = unsafe { *(ctx as *mut usize) };
 
-    let xr = mat.create_vec_left();
-    let xi = mat.create_vec_left();
+    let xr = mat.create_vec_left()?;
+    let xi = mat.create_vec_left()?;
 
-    let mut x = PetscVec::create(&world);
-    x.set_sizes(Some(n), None);
-    x.set_up();
-    x.assembly_begin();
-    x.assembly_end();
+    let mut x = PetscVec::create(&world)?;
+    x.set_sizes(Some(n), None)?;
+    x.set_up()?;
+    x.assembly_begin()?;
+    x.assembly_end()?;
 
-    let y = x.duplicate();
-    y.assembly_begin();
-    y.assembly_end();
+    let y = x.duplicate()?;
+    y.assembly_begin()?;
+    y.assembly_end()?;
 
     // Mat mult
     // trampoline_type_b!(my_mat_mult, my_mat_mult_raw);
-    mat.shell_set_operation_type_b(slepc_sys::MatOperation::MATOP_MULT, my_mat_mult);
+    mat.shell_set_operation_type_b(slepc_sys::MatOperation::MATOP_MULT, my_mat_mult)?;
     // Mat mult transpose
-    mat.shell_set_operation_type_b(slepc_sys::MatOperation::MATOP_MULT_TRANSPOSE, my_mat_mult);
+    mat.shell_set_operation_type_b(slepc_sys::MatOperation::MATOP_MULT_TRANSPOSE, my_mat_mult)?;
     // Get diagonal
     // trampoline_type_a!(my_get_diagonal, my_get_diagonal_raw);
-    mat.shell_set_operation_type_a(slepc_sys::MatOperation::MATOP_GET_DIAGONAL, my_get_diagonal);
+    mat.shell_set_operation_type_a(slepc_sys::MatOperation::MATOP_GET_DIAGONAL, my_get_diagonal)?;
 
     println!("a {:?}", ret_ctx);
+
+    let arr = mat.to_ndarray();
 
     // ----------------------------------------------
     //              Create the eigensolver
     // ----------------------------------------------
 
-    let mut eps = SlepcEps::create(&world);
-    eps.set_operators(Some(mat.as_raw()), None);
-    eps.set_tolerances(Some(EPS_TOL), Some(EPS_MAXIT));
-    eps.set_dimensions(Some(EPS_NEV), None, None);
+    let mut eps = SlepcEps::create(&world)?;
+    eps.set_operators(Some(mat.as_raw()), None)?;
+    eps.set_tolerances(Some(EPS_TOL), Some(EPS_MAXIT))?;
+    eps.set_dimensions(Some(EPS_NEV), None, None)?;
     // eps.set_which_eigenpairs(slepc_sys::EPSWhich::EPS_LARGEST_REAL);
-    eps.set_type("krylovschur");
-    eps.set_from_options();
+    eps.set_type("krylovschur")?;
+    eps.set_from_options()?;
 
     println!("b {:?}", mat.get_size());
 
     // ----------------------------------------------
     //             Solve the eigensystem
     // ----------------------------------------------
-    eps.solve();
+    eps.solve()?;
 
     println!("c {:?}", ret_ctx);
 
     // Get values and print
-    let eps_its = eps.get_iteration_number();
-    let eps_type = eps.get_type();
-    let eps_nconv = eps.get_converged();
-    let (eps_nev, _eps_ncv) = eps.get_dimensions();
-    let (eps_tol, eps_maxit) = eps.get_tolerances();
+    let eps_its = eps.get_iteration_number()?;
+    let eps_type = eps.get_type()?;
+    let eps_nconv = eps.get_converged()?;
+    let (eps_nev, _eps_ncv) = eps.get_dimensions()?;
+    let (eps_tol, eps_maxit) = eps.get_tolerances()?;
 
     world.print(&format!(
         " Number of iterations of the method: {} \n",
         eps_its
-    ));
-    world.print(&format!(" Solution method: {} \n", eps_type));
-    world.print(&format!(" Number of requested eigenvalues: {} \n", eps_nev));
+    ))?;
+    world.print(&format!(" Solution method: {} \n", eps_type))?;
+    world.print(&format!(" Number of requested eigenvalues: {} \n", eps_nev))?;
     world.print(&format!(
         " Number of converged eigenvalues: {} \n",
         eps_nconv
-    ));
+    ))?;
     world.print(&format!(
         " Stopping condition: tol={:e}, maxit={} \n",
         eps_tol, eps_maxit,
-    ));
+    ))?;
 
     world.print(
         "\n           k          ||Ax-kx||/||kx||\n  ----------------- ------------------\n",
-    );
+    )?;
     for i in 0..eps_nconv {
-        let (kr, ki) = eps.get_eigenpair(i, xr.as_raw(), xi.as_raw());
-        let error = eps.compute_error(i, slepc_sys::EPSErrorType::EPS_ERROR_RELATIVE);
+        let (kr, ki) = eps.get_eigenpair(i, xr.as_raw(), xi.as_raw())?;
+        let error = eps.compute_error(i, slepc_sys::EPSErrorType::EPS_ERROR_RELATIVE)?;
         let (re, im) = (kr, ki);
-        world.print(&format!("{:9.6} {:9.6}i {:12.2e} \n", re, im, error));
+        world.print(&format!("{:9.6} {:9.6}i {:12.2e} \n", re, im, error))?;
     }
 
+    Ok(())
     // let (istart, iend) = xr.get_ownership_range();
     // let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>());
     // plot_gnu(&vec_vals);

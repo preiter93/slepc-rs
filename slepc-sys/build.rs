@@ -27,11 +27,6 @@ fn main() {
     .collect();
 
     println!("cargo:rustc-link-search={}", petsc_lib_dir.display());
-    // // the binary will look for the petsc lib in the directory pointed at by LD_LIBRARY_PATH
-    // println!(
-    //     "cargo:rustc-env=LD_LIBRARY_PATH={}",
-    //     petsc_lib_dir.display()
-    // );
     println!("cargo:rustc-link-lib=petsc");
 
     // Allow user to set SLEPc paths from environment variables.
@@ -56,10 +51,6 @@ fn main() {
     .collect();
 
     println!("cargo:rustc-link-search={}", slepc_lib_dir.display());
-    // println!(
-    //     "cargo:rustc-env=LD_LIBRARY_PATH={}",
-    //     slepc_lib_dir.display()
-    // );
     println!("cargo:rustc-link-lib=slepc");
     println!("cargo:rustc-link-lib=petsc");
 

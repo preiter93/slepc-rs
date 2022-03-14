@@ -1,6 +1,6 @@
 //! Define slepc world
 #![allow(clippy::module_name_repetitions)]
-use crate::with_uninitialized;
+use crate::{check_error, with_uninitialized, Result};
 use slepc_sys::MPI_Comm;
 use std::ffi::CString;
 use std::os::raw::{c_char, c_int};
@@ -16,8 +16,11 @@ impl SlepcWorld {
     ///
     /// # Panics
     /// Unwrap of `CString` fails
+    ///
+    /// # Errors
+    /// `PETSc` returns error
     #[allow(clippy::cast_possible_truncation)]
-    pub fn initialize() -> Self {
+    pub fn initialize() -> Result<Self> {
         // Command line arguments
         let argv = std::env::args().collect::<Vec<String>>();
         let argc = argv.len();
@@ -37,20 +40,16 @@ impl SlepcWorld {
                 std::ptr::null(),
             )
         };
-        if ierr != 0 {
-            println!("error code {} from SlepcInitialize", ierr);
-        }
-
-        Self(unsafe { slepc_sys::PETSC_COMM_WORLD })
+        check_error(ierr)?;
+        Ok(Self(unsafe { slepc_sys::PETSC_COMM_WORLD }))
     }
 
-    // Finalize world
-    pub fn finalize() {
-        let ierr = unsafe { slepc_sys::SlepcFinalize() };
-        if ierr != 0 {
-            println!("error code {} from SlepcFinalize", ierr);
-        }
-    }
+    // // Finalize world
+    // pub fn finalize() -> Result<()> {
+    //     let ierr = unsafe { slepc_sys::SlepcFinalize() };
+    //     check_error(ierr)?;
+    //     Ok(())
+    // }
 
     /// Whether the MPI library has been initialized
     pub fn is_initialized() -> bool {
@@ -78,12 +77,14 @@ impl SlepcWorld {
     ///
     /// # Panics
     /// Unwrap of `CString` fails
-    pub fn print(&self, msg: &str) {
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn print(&self, msg: &str) -> Result<()> {
         let msg_c = CString::new(msg).unwrap();
         let ierr = unsafe { slepc_sys::PetscPrintf(self.as_raw(), msg_c.as_ptr()) };
-        if ierr != 0 {
-            println!("error code {} from PetscPrintf", ierr);
-        }
+        check_error(ierr)?;
+        Ok(())
     }
 }
 
