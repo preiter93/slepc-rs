@@ -248,11 +248,13 @@ impl PetscVec {
         }
         (i_start, i_end)
     }
+}
 
+impl Drop for PetscVec {
     /// Wrapper for [`slepc_sys::VecDestroy`]
     ///
     /// Frees space taken by a vector.
-    pub fn destroy(&self) {
+    fn drop(&mut self) {
         let ierr = unsafe { slepc_sys::VecDestroy(&mut self.as_raw() as *mut _) };
         if ierr != 0 {
             println!("error code {} from VecDestroy", ierr);

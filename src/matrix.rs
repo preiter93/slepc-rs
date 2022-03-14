@@ -234,11 +234,13 @@ impl PetscMat {
         }
         PetscVec::from_raw(vec)
     }
+}
 
+impl Drop for PetscMat {
     /// Wrapper for [`slepc_sys::MatDestroy`]
     ///
     /// Frees space taken by a matrix.
-    pub fn destroy(&self) {
+    fn drop(&mut self) {
         let ierr = unsafe { slepc_sys::MatDestroy(&mut self.as_raw() as *mut _) };
         if ierr != 0 {
             println!("error code {} from MatDestroy", ierr);

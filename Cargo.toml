@@ -10,5 +10,5 @@ slepc-sys = { path = "./slepc-sys" }
 gnuplot = { version = "0.0.37", optional = true }
 
 [features]
-default = ["plot"]
-plot = ["gnuplot"]
+default = ["with_gnuplot"]
+with_gnuplot = ["gnuplot"]

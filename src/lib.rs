@@ -58,8 +58,9 @@
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::similar_names)]
 pub mod eigensolver;
+#[cfg(feature = "with_gnuplot")]
+pub mod gnuplot;
 pub mod linear_system;
-// pub mod mat_shell;
 pub mod matrix;
 pub mod matrix_shell;
 pub mod preconditioner;

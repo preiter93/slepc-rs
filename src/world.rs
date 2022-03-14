@@ -86,3 +86,15 @@ impl SlepcWorld {
         }
     }
 }
+
+impl Drop for SlepcWorld {
+    /// Finalize world
+    ///
+    /// TODO: Check if necessary
+    fn drop(&mut self) {
+        let ierr = unsafe { slepc_sys::SlepcFinalize() };
+        if ierr != 0 {
+            println!("error code {} from SlepcFinalize", ierr);
+        }
+    }
+}

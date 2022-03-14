@@ -55,11 +55,11 @@ impl PetscKSP {
         // Transform c string to rust string
         unsafe { std::ffi::CStr::from_ptr(ksp_type).to_str().unwrap() }
     }
+}
 
+impl Drop for PetscKSP {
     /// Wrapper for [`slepc_sys::KSPDestroy`]
-    ///
-    /// Frees space taken by a ksp object.
-    pub fn destroy(&self) {
+    fn drop(&mut self) {
         let ierr = unsafe { slepc_sys::KSPDestroy(&mut self.as_raw() as *mut _) };
         if ierr != 0 {
             println!("error code {} from KSPDestroy", ierr);

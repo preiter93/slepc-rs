@@ -10,7 +10,6 @@ use slepc_rs::eigensolver::SlepcEps;
 use slepc_rs::matrix::PetscMat;
 use slepc_rs::vector::PetscVec;
 use slepc_rs::world::SlepcWorld;
-use slepc_rs::{trampoline_type_a, trampoline_type_b};
 
 // Requested tolerance
 const EPS_TOL: slepc_sys::PetscReal = 1e-5;
@@ -65,7 +64,7 @@ fn main() {
     // ----------------------------------------------
     //                  Shell Matrix
     // ----------------------------------------------
-    let mat = PetscMat::create_shell::<u8>(&world, n, n, Some(n), Some(n), None);
+    let mat = PetscMat::create_shell::<u8>(&world, None, None, Some(n), Some(n), None);
 
     let xr = mat.create_vec_left();
     let xi = mat.create_vec_left();
@@ -81,19 +80,11 @@ fn main() {
     y.assembly_end();
 
     // Mat mult
-    trampoline_type_b!(my_mat_mult, my_mat_mult_raw);
-    mat.shell_set_operation_type_b(slepc_sys::MatOperation::MATOP_MULT, my_mat_mult_raw);
+    mat.shell_set_operation_type_b(slepc_sys::MatOperation::MATOP_MULT, my_mat_mult);
     // Mat mult transpose
-    mat.shell_set_operation_type_b(
-        slepc_sys::MatOperation::MATOP_MULT_TRANSPOSE,
-        my_mat_mult_raw,
-    );
+    mat.shell_set_operation_type_b(slepc_sys::MatOperation::MATOP_MULT_TRANSPOSE, my_mat_mult);
     // Get diagonal
-    trampoline_type_a!(my_get_diagonal, my_get_diagonal_raw);
-    mat.shell_set_operation_type_a(
-        slepc_sys::MatOperation::MATOP_GET_DIAGONAL,
-        my_get_diagonal_raw,
-    );
+    mat.shell_set_operation_type_a(slepc_sys::MatOperation::MATOP_GET_DIAGONAL, my_get_diagonal);
 
     // ----------------------------------------------
     //              Create the eigensolver
@@ -151,14 +142,14 @@ fn main() {
         plot_gnu(&vec_vals);
     }
 
-    mat.destroy();
-    x.destroy();
-    y.destroy();
-    xi.destroy();
-    xr.destroy();
-    eps.destroy();
+    // mat.destroy();
+    // x.destroy();
+    // y.destroy();
+    // xi.destroy();
+    // xr.destroy();
+    // eps.destroy();
 
-    SlepcWorld::finalize();
+    // SlepcWorld::finalize();
 }
 
 /// Plot line
