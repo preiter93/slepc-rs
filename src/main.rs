@@ -102,8 +102,6 @@ fn my_get_diagonal(_mat: &PetscMat, d: &mut PetscVec) {
 
 type MyContext = (i32, i32);
 
-use ndarray::Array2;
-
 fn main() -> Result<()> {
     // Set openblas num threads to 1, otherwise it might
     // conflict with mpi parallelization
@@ -164,7 +162,9 @@ fn main() -> Result<()> {
 
     println!("a {:?}", ret_ctx);
 
+    // Errors
     let arr = mat.to_ndarray();
+    println!("{:?}", arr);
 
     // ----------------------------------------------
     //              Create the eigensolver
