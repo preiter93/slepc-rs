@@ -27,13 +27,14 @@ fn main() {
     std::env::set_var("OPENBLAS_NUM_THREADS", "1");
     // Command line arguments
     let argv = std::env::args().collect::<Vec<String>>();
-    let argc = argv.len();
-    let mut c_argc = argc as c_int;
     let mut c_argv = argv
         .into_iter()
-        .map(|arg| CString::new(arg).unwrap().into_raw())
+        .map(|arg| CString::new(arg).expect("CString::new failed").into_raw())
         .collect::<Vec<*mut c_char>>();
-    let mut c_argv_ptr = c_argv.as_mut_ptr();
+    // Without this, a segmentation fault occurs ...
+    c_argv.push(std::ptr::null_mut());
+    let c_argv_ptr = &mut c_argv.as_mut_ptr();
+    let c_argc_ptr = &mut (c_argv.len() as c_int);
 
     // Parameters
     let n = 10000;
@@ -62,13 +63,11 @@ fn main() {
 
     unsafe {
         // Initialize slepc
-        let ierr = slepc_sys::SlepcInitialize(
-            &mut c_argc,
-            &mut c_argv_ptr,
-            std::ptr::null(),
-            std::ptr::null(),
-        );
+        println!("start");
+        let ierr =
+            slepc_sys::SlepcInitialize(c_argc_ptr, c_argv_ptr, std::ptr::null(), std::ptr::null());
         check_err(ierr, "SlepcInitialize");
+        println!("init done");
 
         // Print hello world
         let msg = CString::new("Hello from SLEPc\n").unwrap();

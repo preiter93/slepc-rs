@@ -53,8 +53,8 @@
 //!
 //! ## Documentation
 //! - <https://slepc.upv.es/documentation/slepc.pdf>
+#![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate)]
-#![allow(clippy::return_self_not_must_use)]
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::similar_names)]
 pub mod eigensolver;

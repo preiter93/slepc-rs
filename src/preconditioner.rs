@@ -34,10 +34,14 @@ impl PetscPC {
     ///
     /// Builds `PC` for a particular preconditioner type
     ///
+    /// <https://petsc.org/main/docs/manualpages/PC/PCType.html#PCType>
+    ///
     /// # Errors
     /// `PETSc` returns error
-    pub fn set_type(&mut self, pc_type: slepc_sys::PCType) -> Result<()> {
-        let ierr = unsafe { slepc_sys::PCSetType(self.as_raw(), pc_type) };
+    pub fn set_type(&mut self, pc_type: &str) -> Result<()> {
+        let pc_type_c = std::ffi::CString::new(pc_type)
+            .expect("CString::new failed in preconditioner::set_type");
+        let ierr = unsafe { slepc_sys::PCSetType(self.as_raw(), pc_type_c.as_ptr()) };
         check_error(ierr)?;
         Ok(())
     }

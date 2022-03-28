@@ -73,24 +73,51 @@ impl PetscMat {
         Ok(Self::from_raw(mat_p))
     }
 
+    // /// Wrapper for [`slepc_sys::MatShellGetContext`]
+    // ///
+    // /// Returns the user-provided context associated with a shell matrix.
+    // /// -> &'a mut T
+    // ///
+    // /// # Errors
+    // /// `PETSc` returns error
+    // pub fn shell_get_context<T: std::marker::Copy>(&self) -> Result<Option<T>> {
+    //     let mut ctx_void = std::mem::MaybeUninit::<*mut ::std::os::raw::c_void>::uninit();
+    //     let ierr =
+    //         unsafe { slepc_sys::MatShellGetContext(self.as_raw(), ctx_void.as_mut_ptr().cast()) };
+    //     check_error(ierr)?;
+    //     let ctx_void = unsafe { ctx_void.assume_init() };
+    //     // precautionary measure: ensure pointers are not null
+    //     if ctx_void.is_null() {
+    //         Ok(None)
+    //     } else {
+    //         Ok(Some(unsafe { *voidp_to_ref(&ctx_void) }))
+    //     }
+    // }
+
     /// Wrapper for [`slepc_sys::MatShellGetContext`]
     ///
     /// Returns the user-provided context associated with a shell matrix.
     /// -> &'a mut T
     ///
+    /// # Warning:
+    /// This function might be *unsound*! Use with caution.
+    ///
+    /// User is responsible that the return time of this function
+    /// matches the custom context defined in [`Self::create_shell`]
+    ///
     /// # Errors
     /// `PETSc` returns error
-    pub fn shell_get_context<T: std::marker::Copy>(&self) -> Result<Option<T>> {
+    pub fn shell_get_context<T>(&self) -> Result<Option<&T>> {
         let mut ctx_void = std::mem::MaybeUninit::<*mut ::std::os::raw::c_void>::uninit();
         let ierr =
             unsafe { slepc_sys::MatShellGetContext(self.as_raw(), ctx_void.as_mut_ptr().cast()) };
         check_error(ierr)?;
         let ctx_void = unsafe { ctx_void.assume_init() };
-        // precautionary measure: ensure pointers are not null
         if ctx_void.is_null() {
             Ok(None)
         } else {
-            Ok(Some(unsafe { *voidp_to_ref(&ctx_void) }))
+            let t_ptr = ctx_void as *mut T;
+            Ok(Some(unsafe { &*t_ptr.cast() }))
         }
     }
 

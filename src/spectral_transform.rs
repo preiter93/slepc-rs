@@ -6,6 +6,7 @@ use crate::linear_system::PetscKSP;
 use crate::vector::PetscVec;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, Result};
+use std::mem::ManuallyDrop;
 
 pub struct PetscST {
     // Pointer to ST object
@@ -34,6 +35,19 @@ impl PetscST {
         Ok(Self::from_raw(st_p))
     }
 
+    /// Wrapper for [`slepc_sys::STSetFromOptions`]
+    ///
+    /// Sets `ST` options from the options database. This routine must be called
+    /// before `STSetUp()` if the user is to be allowed to set the type of transformation.
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_from_options(&mut self) -> Result<()> {
+        let ierr = unsafe { slepc_sys::STSetFromOptions(self.as_raw()) };
+        check_error(ierr)?;
+        Ok(())
+    }
+
     /// Wrapper for [`slepc_sys::STSetType`]
     ///
     /// Builds ST for a particular spectral transformation.
@@ -49,8 +63,10 @@ impl PetscST {
     ///
     /// # Errors
     /// `PETSc` returns error
-    pub fn set_type(&mut self, st_type: slepc_sys::STType) -> Result<()> {
-        let ierr = unsafe { slepc_sys::STSetType(self.as_raw(), st_type) };
+    pub fn set_type(&mut self, st_type: &str) -> Result<()> {
+        let st_type_c = std::ffi::CString::new(st_type)
+            .expect("CString::new failed in spectral_transform::set_type");
+        let ierr = unsafe { slepc_sys::STSetType(self.as_raw(), st_type_c.as_ptr()) };
         check_error(ierr)?;
         Ok(())
     }
@@ -126,11 +142,11 @@ impl PetscST {
     ///
     /// # Errors
     /// `PETSc` returns error
-    pub fn get_ksp(&self) -> Result<PetscKSP> {
+    pub fn get_ksp(&self) -> Result<ManuallyDrop<PetscKSP>> {
         let (ierr, ksp) =
             unsafe { with_uninitialized(|ksp| slepc_sys::STGetKSP(self.as_raw(), ksp)) };
         check_error(ierr)?;
-        Ok(PetscKSP::from_raw(ksp))
+        Ok(ManuallyDrop::new(PetscKSP::from_raw(ksp)))
     }
 }
 

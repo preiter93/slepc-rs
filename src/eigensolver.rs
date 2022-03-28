@@ -2,6 +2,7 @@
 use crate::spectral_transform::PetscST;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, with_uninitialized2, Result};
+use std::mem::ManuallyDrop;
 
 pub struct SlepcEps {
     // Pointer to EPS object
@@ -165,13 +166,26 @@ impl SlepcEps {
 
     /// Wrapper for [`slepc_sys::EPSSetST`]
     ///
-    /// Associates a spectral transformation [`crate::spectral_transform::PetscST`]  
+    /// Associates a spectral transformation [`crate::spectral_transform::PetscST`]
     /// to the eigensolver.
     ///
     /// # Errors
     /// `PETSc` returns error
     pub fn set_st(&self, st: &PetscST) -> Result<()> {
         let ierr = unsafe { slepc_sys::EPSSetST(self.as_raw(), st.as_raw()) };
+        check_error(ierr)?;
+        Ok(())
+    }
+
+    /// Wrapper for [`slepc_sys::EPSSetTarget`]
+    ///
+    /// The target is a scalar value used to determine the portion of the spectrum of interest.
+    /// It is used in combination with [`Self::set_which_eigenpairs`]
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_target(&self, target: slepc_sys::PetscScalar) -> Result<()> {
+        let ierr = unsafe { slepc_sys::EPSSetTarget(self.as_raw(), target) };
         check_error(ierr)?;
         Ok(())
     }
@@ -284,10 +298,10 @@ impl SlepcEps {
     ///
     /// # Errors
     /// `PETSc` returns error
-    pub fn get_st(&self) -> Result<PetscST> {
+    pub fn get_st(&self) -> Result<ManuallyDrop<PetscST>> {
         let (ierr, st) = unsafe { with_uninitialized(|st| slepc_sys::EPSGetST(self.as_raw(), st)) };
         check_error(ierr)?;
-        Ok(PetscST::from_raw(st))
+        Ok(ManuallyDrop::new(PetscST::from_raw(st)))
     }
 
     /// Wrapper for [`slepc_sys::EPSComputeError`]
