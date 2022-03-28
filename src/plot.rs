@@ -36,8 +36,7 @@ pub fn plot_line(y: &[slepc_sys::PetscReal]) {
 /// # Panics
 /// Gnuplot show fails.
 #[allow(clippy::cast_precision_loss)]
-pub fn plot_gnu2(x: &[slepc_sys::PetscReal], y: &[slepc_sys::PetscReal]) {
-    use gnuplot::{Caption, Color, Figure};
+pub fn plot_line2(x: &[slepc_sys::PetscReal], y: &[slepc_sys::PetscReal]) {
     assert!(x.len() == y.len(), "Size mismatch");
     let mut fg = Figure::new();
     fg.axes2d().lines(x, y, &[Caption(""), Color("black")]);

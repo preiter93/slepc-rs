@@ -1,11 +1,3 @@
-//! # Matrix free eigenvalues of 1D Laplacian
-//!
-//! Similar as `examples/ex03.rs` but here we use `slepc-rs` interfaces
-//!
-//! Example from
-//! https://slepc.upv.es/documentation/current/src/eps/tutorials/ex3.c.html
-//!
-//! Note: Not MPI tested!
 use slepc_rs::eigensolver::SlepcEps;
 use slepc_rs::matrix::PetscMat;
 use slepc_rs::vector::PetscVec;
@@ -20,7 +12,7 @@ const EPS_MAXIT: slepc_sys::PetscInt = 50000;
 const EPS_NEV: slepc_sys::PetscInt = 2;
 
 /// Matmul 1d laplacian
-fn my_mat_mult(mat: &PetscMat, x: &PetscVec, y: &mut PetscVec) {
+fn my_mat_mult(_mat: &PetscMat, x: &PetscVec, y: &mut PetscVec) {
     let x_view = x.get_array_read().unwrap();
     let y_view_mut = y.get_array().unwrap();
     let (i_start, i_end) = x.get_ownership_range().unwrap();
@@ -51,12 +43,6 @@ fn my_get_diagonal(_mat: &PetscMat, d: &mut PetscVec) {
     }
 }
 
-<<<<<<< HEAD
-type Context = (usize, usize);
-=======
-type MyContext = (i32, i32);
->>>>>>> 9d7e7518caf907f1ac7080413b316bc7d41b74c3
-
 fn main() -> Result<()> {
     // Set openblas num threads to 1, otherwise it might
     // conflict with mpi parallelization
@@ -65,16 +51,13 @@ fn main() -> Result<()> {
     // Parameters
     let n = 1000;
 
-    let mut ctx: Context = (n as usize, n as usize);
-
     println!("Hello World");
     let world = SlepcWorld::initialize()?;
 
     // ----------------------------------------------
     //                  Shell Matrix
     // ----------------------------------------------
-    let mat =
-        PetscMat::create_shell::<Context>(&world, None, None, Some(n), Some(n), Some(&mut ctx))?;
+    let mat = PetscMat::create_shell::<u8>(&world, None, None, Some(n), Some(n), None)?;
 
     let xr = mat.create_vec_left()?;
     let xi = mat.create_vec_left()?;
@@ -96,15 +79,6 @@ fn main() -> Result<()> {
     // Get diagonal
     mat.shell_set_operation_type_a(slepc_sys::MatOperation::MATOP_GET_DIAGONAL, my_get_diagonal)?;
 
-<<<<<<< HEAD
-=======
-    println!("a {:?}", ret_ctx);
-
-    // Errors
-    let arr = mat.to_ndarray();
-    println!("{:?}", arr);
-
->>>>>>> 9d7e7518caf907f1ac7080413b316bc7d41b74c3
     // ----------------------------------------------
     //              Create the eigensolver
     // ----------------------------------------------
@@ -154,31 +128,21 @@ fn main() -> Result<()> {
         world.print(&format!("{:9.6} {:9.6}i {:12.2e} \n", re, im, error))?;
     }
 
-    #[cfg(feature = "plot")]
+    #[cfg(feature = "gnuplot")]
     {
-        let (istart, iend) = xr.get_ownership_range();
-        let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>());
-        plot_gnu(&vec_vals);
+        let (istart, iend) = xr.get_ownership_range()?;
+        let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>())?;
+        slepc_rs::plot::plot_line(&vec_vals);
     }
 
     Ok(())
-}
 
-/// Plot line
-/// # Example
-/// Plot Petsc Vector
-/// ```ìgnore
-/// let (istart, iend) = xr.get_ownership_range();
-/// let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>());
-/// plot_gnu(&vec_vals);
-/// ```
-#[cfg(feature = "plot")]
-fn plot_gnu(y: &[slepc_sys::PetscReal]) {
-    use gnuplot::{Caption, Color, Figure};
-    let x = (0..y.len())
-        .map(|x| x as f64)
-        .collect::<Vec<slepc_sys::PetscReal>>();
-    let mut fg = Figure::new();
-    fg.axes2d().lines(&x, y, &[Caption(""), Color("black")]);
-    fg.show().unwrap();
+    // mat.destroy();
+    // x.destroy();
+    // y.destroy();
+    // xi.destroy();
+    // xr.destroy();
+    // eps.destroy();
+
+    // SlepcWorld::finalize();
 }
