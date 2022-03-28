@@ -51,7 +51,11 @@ fn my_get_diagonal(_mat: &PetscMat, d: &mut PetscVec) {
     }
 }
 
+<<<<<<< HEAD
 type Context = (usize, usize);
+=======
+type MyContext = (i32, i32);
+>>>>>>> 9d7e7518caf907f1ac7080413b316bc7d41b74c3
 
 fn main() -> Result<()> {
     // Set openblas num threads to 1, otherwise it might
@@ -92,6 +96,15 @@ fn main() -> Result<()> {
     // Get diagonal
     mat.shell_set_operation_type_a(slepc_sys::MatOperation::MATOP_GET_DIAGONAL, my_get_diagonal)?;
 
+<<<<<<< HEAD
+=======
+    println!("a {:?}", ret_ctx);
+
+    // Errors
+    let arr = mat.to_ndarray();
+    println!("{:?}", arr);
+
+>>>>>>> 9d7e7518caf907f1ac7080413b316bc7d41b74c3
     // ----------------------------------------------
     //              Create the eigensolver
     // ----------------------------------------------

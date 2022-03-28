@@ -136,11 +136,11 @@ fn main() -> Result<()> {
         world.print(&format!("{:9.6} {:9.6}i {:12.2e} \n", re, im, error))?;
     }
 
-    #[cfg(feature = "plot")]
+    #[cfg(feature = "gnuplot")]
     {
-        let (istart, iend) = xr.get_ownership_range();
-        let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>());
-        plot_gnu(&vec_vals);
+        let (istart, iend) = xr.get_ownership_range()?;
+        let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>())?;
+        slepc_rs::plot::plot_line(&vec_vals);
     }
 
     Ok(())
@@ -153,23 +153,4 @@ fn main() -> Result<()> {
     // eps.destroy();
 
     // SlepcWorld::finalize();
-}
-
-/// Plot line
-/// # Example
-/// Plot Petsc Vector
-/// ```ìgnore
-/// let (istart, iend) = xr.get_ownership_range();
-/// let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>());
-/// plot_gnu(&vec_vals);
-/// ```
-#[cfg(feature = "plot")]
-fn plot_gnu(y: &[slepc_sys::PetscReal]) {
-    use gnuplot::{Caption, Color, Figure};
-    let x = (0..y.len())
-        .map(|x| x as f64)
-        .collect::<Vec<slepc_sys::PetscReal>>();
-    let mut fg = Figure::new();
-    fg.axes2d().lines(&x, y, &[Caption(""), Color("black")]);
-    fg.show().unwrap();
 }

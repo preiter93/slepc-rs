@@ -275,11 +275,11 @@ impl Drop for PetscMat {
     }
 }
 
-#[cfg(feature = "with_ndarray")]
-use ndarray::Array2;
+#[cfg(feature = "ndarray")]
+use ndarray_crate::Array2;
 
 impl PetscMat {
-    #[cfg(feature = "with_ndarray")]
+    #[cfg(feature = "ndarray")]
     #[allow(clippy::cast_sign_loss)]
     /// Return Matrix as 2d ndarray
     ///
