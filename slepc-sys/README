@@ -1,1 +1,0 @@
-RUSTFLAGS="-C link-args=-Wl,-rpath,/home/philipp/local/petsc-3.16.4/linux-gnu-real-debug/lib" cargo run

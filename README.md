@@ -19,10 +19,11 @@ crate is tested with v.`3.16.4`.
 Install petsc via
 ```
 export PETSC_ARCH=linux-gnu-real-debug
-./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --download-f2cblaslapack
+./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90
 make all check
 ```
-(You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`)
+(You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`,
+or build together with lapack, i.e. --download-f2cblaslapack)
 
 Then export directory, arch name and library path, i.e.
 ```
@@ -31,12 +32,25 @@ export PETSC_ARCH=linux-gnu-real-debug
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PETSC_DIR}/${PETSC_ARCH}/lib
 ```
 
-#### `SLEPc`
+#### `PETSc` Complex
+//! ```text
+export PETSC_ARCH=linux-gnu-real-debug
+./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --with-scalar-type=complex
+make all check
+```rust
+(You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`,
+or build together with lapack, i.e. --download-f2cblaslapack)
+
+- *Be careful that LD_LIBRARY_PATH has no old configuration*
+
+- Turn on feature `scalar_complex`!
+
+### `SLEPc`
 Download [download `SLEPc`](https://slepc.upv.es/download/). This
 crate is tested with v.`3.16.2`.
 
 Install slepc via
-```
+```text
 ./configure
 make all check
 ```
@@ -49,3 +63,9 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${SLEPC_DIR}/${PETSC_ARCH}/lib
 ### Other similar crates
 - <https://gitlab.com/petsc/petsc-rs>
 - <https://github.com/tflovorn/slepc-sys>
+
+### TODO
+- Error Handling
+
+### Documentation
+- <https://slepc.upv.es/documentation/slepc.pdf>

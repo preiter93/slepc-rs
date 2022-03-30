@@ -79,6 +79,19 @@ impl PetscVec {
         Ok(())
     }
 
+    /// Wrapper for [`slepc_sys::VecSetRandom`]
+    ///
+    /// Sets all components of a vector to random numbers.
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    pub fn set_random(&mut self, rctx: Option<slepc_sys::PetscRandom>) -> Result<()> {
+        let ierr =
+            unsafe { slepc_sys::VecSetRandom(self.as_raw(), rctx.unwrap_or(std::ptr::null_mut())) };
+        check_error(ierr)?;
+        Ok(())
+    }
+
     /// Wrapper for [`slepc_sys::VecSetValues`]
     ///
     ///  Inserts or adds values into certain locations of a vector.

@@ -6,9 +6,9 @@
 //! https://slepc.upv.es/documentation/current/src/eps/tutorials/ex3.c.html
 //!
 //! Note: Not MPI tested!
-use slepc_rs::eigensolver::SlepcEps;
-use slepc_rs::matrix::PetscMat;
-use slepc_rs::vector::PetscVec;
+use slepc_rs::eps::SlepcEps;
+use slepc_rs::mat::PetscMat;
+use slepc_rs::vec::PetscVec;
 use slepc_rs::world::SlepcWorld;
 use slepc_rs::Result;
 
@@ -140,7 +140,7 @@ fn main() -> Result<()> {
     {
         let (istart, iend) = xr.get_ownership_range()?;
         let vec_vals = xr.get_values(&(istart..iend).collect::<Vec<i32>>())?;
-        slepc_rs::plot::plot_line(&vec_vals);
+        slepc_rs::gp::plot_line(&vec_vals);
     }
 
     Ok(())

@@ -17,10 +17,11 @@
 //! Install petsc via
 //! ```text
 //! export PETSC_ARCH=linux-gnu-real-debug
-//! ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --download-f2cblaslapack
+//! ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90
 //! make all check
 //! ```
-//! (You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`)
+//! (You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`,
+//! or build together with lapack, i.e. --download-f2cblaslapack)
 //!
 //! Then export directory, arch name and library path, i.e.
 //! ```text
@@ -28,6 +29,19 @@
 //! export PETSC_ARCH=linux-gnu-real-debug
 //! export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PETSC_DIR}/${PETSC_ARCH}/lib
 //! ```
+//!
+//! ### `PETSc` Complex
+//!//! ```text
+//! export PETSC_ARCH=linux-gnu-real-debug
+//! ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --with-scalar-type=complex
+//! make all check
+//! ```
+//! (You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`,
+//! or build together with lapack, i.e. --download-f2cblaslapack)
+//!
+//! - *Be careful that LD_LIBRARY_PATH has no old configuration*
+//!
+//! - Turn on feature `scalar_complex`!
 //!
 //! ### `SLEPc`
 //! Download [download `SLEPc`](https://slepc.upv.es/download/). This
@@ -54,21 +68,16 @@
 //! ## Documentation
 //! - <https://slepc.upv.es/documentation/slepc.pdf>
 #![warn(clippy::pedantic)]
-#![allow(clippy::must_use_candidate)]
-#![allow(clippy::cast_possible_wrap)]
-#![allow(clippy::similar_names)]
-pub mod eigensolver;
-pub mod linear_system;
-pub mod matrix;
-pub mod matrix_shell;
-#[cfg(feature = "gnuplot")]
-pub mod plot;
-pub mod preconditioner;
-pub mod spectral_transform;
-pub mod vector;
+pub mod eps;
+pub mod ksp;
+pub mod mat;
+pub mod mat_shell;
+pub mod pc;
+pub mod st;
+pub mod vec;
 pub mod world;
-// Reimport all `slepc_sys` routines
-pub use slepc_sys;
+#[cfg(feature = "gnuplot")]
+pub mod gp;
 
 #[derive(Debug, Clone)]
 pub struct PetscError {

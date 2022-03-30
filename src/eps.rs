@@ -1,5 +1,5 @@
 //! Eigenvalue solver of `SLEPc` [`slepc_sys::EPS`]
-use crate::spectral_transform::PetscST;
+use crate::st::PetscST;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, with_uninitialized2, Result};
 use std::mem::ManuallyDrop;

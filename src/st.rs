@@ -1,9 +1,6 @@
-//! Routines of `PETSc` spectral transform object [`slepc_sys::ST`]
-//!
-//! # Doc
-//! <https://slepc.upv.es/documentation/slepc.pdf>
-use crate::linear_system::PetscKSP;
-use crate::vector::PetscVec;
+//! Routines of `PETSc` spectral transforms object [`slepc_sys::ST`]
+use crate::ksp::PetscKSP;
+use crate::vec::PetscVec;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, Result};
 use std::mem::ManuallyDrop;

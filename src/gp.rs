@@ -42,3 +42,4 @@ pub fn plot_line2(x: &[slepc_sys::PetscReal], y: &[slepc_sys::PetscReal]) {
     fg.axes2d().lines(x, y, &[Caption(""), Color("black")]);
     fg.show().unwrap();
 }
+

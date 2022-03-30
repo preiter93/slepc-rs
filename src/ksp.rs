@@ -1,5 +1,5 @@
 //! Routines of `PETSc` linear system object [`slepc_sys::KSP`]
-use crate::preconditioner::PetscPC;
+use crate::pc::PetscPC;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, Result};
 use std::mem::ManuallyDrop;

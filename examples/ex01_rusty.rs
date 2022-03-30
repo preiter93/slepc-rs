@@ -10,8 +10,8 @@
 //! ```ignore
 //! mpirun -np 2 ./target/release/examples/ex01_rusty
 //! ```
-use slepc_rs::eigensolver::SlepcEps;
-use slepc_rs::matrix::PetscMat;
+use slepc_rs::eps::SlepcEps;
+use slepc_rs::mat::PetscMat;
 use slepc_rs::world::SlepcWorld;
 use slepc_rs::Result;
 

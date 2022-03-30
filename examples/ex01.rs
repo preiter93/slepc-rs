@@ -63,11 +63,9 @@ fn main() {
 
     unsafe {
         // Initialize slepc
-        println!("start");
         let ierr =
             slepc_sys::SlepcInitialize(c_argc_ptr, c_argv_ptr, std::ptr::null(), std::ptr::null());
         check_err(ierr, "SlepcInitialize");
-        println!("init done");
 
         // Print hello world
         let msg = CString::new("Hello from SLEPc\n").unwrap();

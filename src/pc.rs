@@ -1,5 +1,5 @@
 //! Preconditioner routines of `PETSc` preconditioners [`slepc_sys::PC`]
-use crate::matrix::PetscMat;
+use crate::mat::PetscMat;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, with_uninitialized2, Result};
 

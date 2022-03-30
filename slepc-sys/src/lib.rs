@@ -1,3 +1,6 @@
+//! # ``Slepc-sys``
+//!
+//! Provides bindings to the `SLEPc` C-library.
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
@@ -5,7 +8,8 @@
 #![allow(dead_code)]
 #![allow(improper_ctypes)]
 #![allow(deref_nullptr)]
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+include!("bindings.rs");
 
 pub const PETSC_DETERMINE_INTEGER: PetscInt = PETSC_DETERMINE as PetscInt;
 pub const PETSC_DETERMINE_REAL: PetscReal = PETSC_DETERMINE as PetscReal;
@@ -22,7 +26,7 @@ mod tests {
     use std::ffi::CString;
     use std::os::raw::{c_char, c_int};
     #[test]
-    fn test_compile() {
+    fn test_must_compile() {
         let argv = std::env::args().collect::<Vec<String>>();
         let argc = argv.len();
 

@@ -1,5 +1,5 @@
 //! Matrix routines of `PETSc` matrices [`slepc_sys::Mat`]
-use crate::vector::PetscVec;
+use crate::vec::PetscVec;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, with_uninitialized2, Result};
 
