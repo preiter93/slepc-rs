@@ -78,6 +78,7 @@ pub mod pc;
 pub mod st;
 pub mod vec;
 pub mod world;
+pub use slepc_sys;
 
 #[derive(Debug, Clone)]
 pub struct PetscError {
