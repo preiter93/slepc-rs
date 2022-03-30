@@ -31,7 +31,7 @@
 //! ```
 //!
 //! ### `PETSc` Complex
-//!//! ```text
+//! ```text
 //! export PETSC_ARCH=linux-gnu-real-debug
 //! ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --with-scalar-type=complex
 //! make all check

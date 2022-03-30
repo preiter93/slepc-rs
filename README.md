@@ -33,11 +33,11 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PETSC_DIR}/${PETSC_ARCH}/lib
 ```
 
 #### `PETSc` Complex
-//! ```text
+```
 export PETSC_ARCH=linux-gnu-real-debug
 ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --with-scalar-type=complex
 make all check
-```rust
+```
 (You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`,
 or build together with lapack, i.e. --download-f2cblaslapack)
 
@@ -45,12 +45,12 @@ or build together with lapack, i.e. --download-f2cblaslapack)
 
 - Turn on feature `scalar_complex`!
 
-### `SLEPc`
+#### `SLEPc`
 Download [download `SLEPc`](https://slepc.upv.es/download/). This
 crate is tested with v.`3.16.2`.
 
 Install slepc via
-```text
+```
 ./configure
 make all check
 ```
