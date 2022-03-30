@@ -69,6 +69,8 @@
 //! - <https://slepc.upv.es/documentation/slepc.pdf>
 #![warn(clippy::pedantic)]
 pub mod eps;
+#[cfg(feature = "gnuplot")]
+pub mod gp;
 pub mod ksp;
 pub mod mat;
 pub mod mat_shell;
@@ -76,8 +78,6 @@ pub mod pc;
 pub mod st;
 pub mod vec;
 pub mod world;
-#[cfg(feature = "gnuplot")]
-pub mod gp;
 
 #[derive(Debug, Clone)]
 pub struct PetscError {

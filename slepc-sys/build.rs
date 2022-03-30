@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 fn main() {
     let petsc_lib_dir: PathBuf = [
-        env::var("PETSC_DIR").unwrap(),
-        env::var("PETSC_ARCH").unwrap(),
+        env::var("PETSC_DIR").expect("Environment variable PETSC_DIR not found!"),
+        env::var("PETSC_ARCH").expect("Environment variable PETSC_ARCH not found!"),
         String::from("lib"),
     ]
     .iter()
@@ -14,8 +14,8 @@ fn main() {
     println!("cargo:rustc-link-lib=petsc");
 
     let slepc_lib_dir: PathBuf = [
-        env::var("SLEPC_DIR").unwrap(),
-        env::var("PETSC_ARCH").unwrap(),
+        env::var("SLEPC_DIR").expect("Environment variable SLEPC_DIR not found!"),
+        env::var("PETSC_ARCH").expect("Environment variable PETSC_ARCH not found!"),
         String::from("lib"),
     ]
     .iter()
