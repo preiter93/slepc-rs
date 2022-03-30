@@ -32,14 +32,14 @@
 //!
 //! ### `PETSc` Complex
 //! ```text
-//! export PETSC_ARCH=linux-gnu-real-debug
+//! export PETSC_ARCH=linux-gnu-complex-debug
 //! ./configure --with-cc=mpicc --with-cxx=mpicxx --with-fc=mpif90 --with-scalar-type=complex
 //! make all check
 //! ```
 //! (You can choose a custom arch name, or build without fc, i.e. `--with-fc=0`,
 //! or build together with lapack, i.e. --download-f2cblaslapack)
 //!
-//! - *Be careful that LD_LIBRARY_PATH has no old configuration*
+//! - *Be careful that LD_LIBRARY_PATH has no old links to a build without complex type!*
 //!
 //! - Turn on feature `scalar_complex`!
 //!
