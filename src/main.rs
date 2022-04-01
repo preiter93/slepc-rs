@@ -15,9 +15,9 @@ fn main() -> Result<()> {
     x.set_random(None)?;
 
     let x_view = x.get_array_read()?;
-    println!("{:?}", x_view.len());
+    println!("{:?}", x_view.as_slice()?.len());
     //println!("{:?}", x_view);
-    for (i, x) in x_view.iter().enumerate() {
+    for (i, x) in x_view.as_slice()?.iter().enumerate() {
         println!("i {:?} {:?}", i, x);
     }
 

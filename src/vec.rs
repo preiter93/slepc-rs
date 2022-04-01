@@ -246,13 +246,8 @@ impl PetscVec {
     ///
     /// # Errors
     /// `PETSc` returns error
-    pub fn get_array_read(&self) -> Result<&[slepc_sys::PetscScalar]> {
-        let (ierr, x) =
-            unsafe { with_uninitialized(|x| slepc_sys::VecGetArrayRead(self.as_raw(), x)) };
-        check_error(ierr)?;
-        // Get slice from raw pointer
-        let size = usize::try_from(self.get_local_size()?).unwrap();
-        Ok(unsafe { std::slice::from_raw_parts(x, size) })
+    pub fn get_array_read<'a>(&'a self) -> Result<PetscVecView<'a>> {
+        PetscVecView::from_vec(self)
     }
 
     /// Wrapper for [`slepc_sys::VecGetArray`]
@@ -264,12 +259,8 @@ impl PetscVec {
     ///
     /// # Errors
     /// `PETSc` returns error
-    pub fn get_array<'b>(&mut self) -> Result<&'b mut [slepc_sys::PetscScalar]> {
-        let (ierr, x) = unsafe { with_uninitialized(|x| slepc_sys::VecGetArray(self.as_raw(), x)) };
-        check_error(ierr)?;
-        // Get slice from raw pointer
-        let size = usize::try_from(self.get_local_size()?).unwrap();
-        Ok(unsafe { std::slice::from_raw_parts_mut(x, size) })
+    pub fn get_array<'a>(&'a mut self) -> Result<PetscVecViewMut<'a>> {
+        PetscVecViewMut::from_vec(self)
     }
 
     /// Wrapper for [`slepc_sys::VecGetOwnershipRange`]
@@ -297,6 +288,91 @@ impl Drop for PetscVec {
         let ierr = unsafe { slepc_sys::VecDestroy(&mut self.as_raw() as *mut _) };
         if ierr != 0 {
             println!("error code {} from VecDestroy", ierr);
+        }
+    }
+}
+
+/// An immutable view, as returned from [`PetscVec::get_array_read`].
+pub struct PetscVecView<'a> {
+    pub(crate) vec: &'a PetscVec,
+    pub(crate) array: *const slepc_sys::PetscScalar,
+}
+
+/// A mutable view, as returned from [`PetscVec::get_array`].
+pub struct PetscVecViewMut<'a> {
+    pub(crate) vec: &'a mut PetscVec,
+    pub(crate) array: *mut slepc_sys::PetscScalar,
+}
+
+
+impl<'a> PetscVecView<'a> {
+    /// Constructor
+    fn from_vec(vec: &'a PetscVec) -> Result<Self> {
+        let (ierr, array) =
+            unsafe { with_uninitialized(|array| slepc_sys::VecGetArrayRead(vec.as_raw(), array)) };
+        check_error(ierr)?;
+        Ok(Self { vec, array })
+    }
+
+    /// Show as slice
+    pub fn as_slice(&self) -> Result<&[slepc_sys::PetscScalar]> {
+        // Get slice from raw pointer
+        let size = usize::try_from(self.vec.get_local_size()?).unwrap();
+        Ok(unsafe { std::slice::from_raw_parts(self.array, size) })
+    }
+
+    #[cfg(feature = "ndarray")]
+    // Show as arrayview
+    pub fn as_arrayview(&self) -> Result<ndarray_crate::ArrayView1<'a, slepc_sys::PetscScalar>> {
+        // Get slice from raw pointer
+        let size = usize::try_from(self.vec.get_local_size()?).unwrap();
+        Ok(unsafe { ndarray_crate::ArrayView1::from_shape_ptr(size, self.array) })
+    }
+}
+
+impl<'a> PetscVecViewMut<'a> {
+    /// Constructor
+    fn from_vec(vec: &'a mut PetscVec) -> Result<Self> {
+        let (ierr, array) =
+            unsafe { with_uninitialized(|array| slepc_sys::VecGetArray(vec.as_raw(), array)) };
+        check_error(ierr)?;
+        Ok(Self { vec, array })
+    }
+
+    /// Show as slice
+    pub fn as_slice(&mut self) -> Result<&'a mut [slepc_sys::PetscScalar]> {
+        // Get slice from raw pointer
+        let size = usize::try_from(self.vec.get_local_size()?).unwrap();
+        Ok(unsafe { std::slice::from_raw_parts_mut(self.array, size) })
+    }
+
+    #[cfg(feature = "ndarray")]
+    // Show as arrayview
+    pub fn as_arrayview(&mut self) -> Result<ndarray_crate::ArrayViewMut1<'a, slepc_sys::PetscScalar>> {
+        // Get slice from raw pointer
+        let size = usize::try_from(self.vec.get_local_size()?).unwrap();
+        Ok(unsafe { ndarray_crate::ArrayViewMut1::from_shape_ptr(size, self.array) })
+    }
+}
+
+impl Drop for PetscVecView<'_> {
+    fn drop(&mut self) {
+        let ierr = unsafe {
+            slepc_sys::VecRestoreArrayRead(self.vec.vec_p, &mut self.array as *const _ as *mut _)
+        };
+        if ierr != 0 {
+            println!("error code {} from VecRestoreArrayRead", ierr);
+        }
+    }
+}
+
+impl Drop for PetscVecViewMut<'_> {
+    fn drop(&mut self) {
+        let ierr = unsafe {
+            slepc_sys::VecRestoreArray(self.vec.vec_p, &mut self.array as *mut _ as *mut _)
+        };
+        if ierr != 0 {
+            println!("error code {} from VecRestoreArrad", ierr);
         }
     }
 }

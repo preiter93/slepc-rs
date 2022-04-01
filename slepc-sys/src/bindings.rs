@@ -160,6 +160,12 @@ extern "C" {
 extern "C" {
     pub fn VecDestroy(arg1: *mut Vec) -> PetscErrorCode;
 }
+extern "C" {
+    pub fn VecRestoreArray(arg1: Vec, arg2: *mut *mut PetscScalar) -> PetscErrorCode;
+}
+extern "C" {
+    pub fn VecRestoreArrayRead(arg1: Vec, arg2: *mut *const PetscScalar) -> PetscErrorCode;
+}
 
 // ---------- `Mat` ----------
 #[repr(C)]

@@ -22,31 +22,36 @@ const EPS_NEV: slepc_sys::PetscInt = 2;
 /// Matmul 1d laplacian
 fn my_mat_mult(_mat: &PetscMat, x: &PetscVec, y: &mut PetscVec) {
     let x_view = x.get_array_read().unwrap();
-    let y_view_mut = y.get_array().unwrap();
+    let x_view_slice = x_view.as_slice().unwrap();
+    let mut y_view = y.get_array().unwrap();
+    let y_view_slice = y_view.as_slice().unwrap();
     let (i_start, i_end) = x.get_ownership_range().unwrap();
     let n = i_end - i_start;
     assert!(
-        n as usize == x_view.len(),
+        n as usize == x_view_slice.len(),
         "got {}, expected {}",
         n,
-        x_view.len()
+        x_view_slice.len()
     );
 
-    for (i, y_i) in y_view_mut.iter_mut().enumerate() {
+    for (i, y_i) in y_view_slice.iter_mut().enumerate() {
         if i == 0 {
-            *y_i = -2. * x_view[i] + 1. * x_view[i + 1];
+            *y_i = -2. * x_view_slice[i] + 1. * x_view_slice[i + 1];
         } else if i == n as usize - 1 {
-            *y_i = 1. * x_view[i - 1] - 2. * x_view[i];
+            *y_i = 1. * x_view_slice[i - 1] - 2. * x_view_slice[i];
         } else {
-            *y_i = 1. * x_view[i - 1] - 2. * x_view[i] + 1. * x_view[i + 1];
+            *y_i = 1. * x_view_slice[i - 1] - 2. * x_view_slice[i] + 1. * x_view_slice[i + 1];
         }
     }
+
+    // x.restore_array_read(x_view);
+    // y.restore_array(y_view_mut);
 }
 
 /// Diagonal 1d laplacian
 fn my_get_diagonal(_mat: &PetscMat, d: &mut PetscVec) {
-    let d_view_mut = d.get_array().unwrap();
-    for (_, d_i) in d_view_mut.iter_mut().enumerate() {
+    let mut d_view = d.get_array().unwrap();
+    for (_, d_i) in d_view.as_slice().unwrap().iter_mut().enumerate() {
         *d_i = -2.;
     }
 }
