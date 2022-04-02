@@ -1,5 +1,6 @@
 //! Routines of `PETSc` linear system object [`slepc_sys::KSP`]
 use crate::pc::PetscPC;
+use crate::viewer::PetscViewer;
 use crate::world::SlepcWorld;
 use crate::{check_error, with_uninitialized, Result};
 use std::mem::ManuallyDrop;
@@ -15,7 +16,7 @@ impl PetscKSP {
         Self { ksp_p }
     }
 
-    // Return raw ST pointer
+    /// Return raw ST pointer
     pub fn as_raw(&self) -> *mut slepc_sys::_p_KSP {
         self.ksp_p
     }
@@ -114,6 +115,33 @@ impl PetscKSP {
         let (ierr, pc) = unsafe { with_uninitialized(|pc| slepc_sys::KSPGetPC(self.as_raw(), pc)) };
         check_error(ierr)?;
         Ok(ManuallyDrop::new(PetscPC::from_raw(pc)))
+    }
+
+    // Wrapper for [`slepc_sys::KSPConvergedReasonView`]
+    ///
+    /// Displays the reason a `KSP` solve converged or diverged to a viewer
+    ///
+    /// # Options Database
+    /// -ksp_converged_reason
+    ///
+    /// # Errors
+    /// `PETSc` returns error
+    ///
+    /// # Example
+    /// Direct call
+    ///```ignore
+    /// let viewer = PetscViewer::stdout_world();
+    /// ksp.converged_reason_view(&viewer)?;
+    ///```
+    /// From options (before ninitialize)
+    ///```ignore
+    /// PetscOptions::set_value(None,"-st_ksp_converged_reason", None)?;
+    ///```
+    /// Or call via command line argumente
+    pub fn converged_reason_view(&self, viewer: &PetscViewer) -> Result<()> {
+        let ierr = unsafe { slepc_sys::KSPConvergedReasonView(self.as_raw(), viewer.as_raw()) };
+        check_error(ierr)?;
+        Ok(())
     }
 }
 

@@ -304,7 +304,6 @@ pub struct PetscVecViewMut<'a> {
     pub(crate) array: *mut slepc_sys::PetscScalar,
 }
 
-
 impl<'a> PetscVecView<'a> {
     /// Constructor
     fn from_vec(vec: &'a PetscVec) -> Result<Self> {
@@ -348,7 +347,9 @@ impl<'a> PetscVecViewMut<'a> {
 
     #[cfg(feature = "ndarray")]
     // Show as arrayview
-    pub fn as_arrayview(&mut self) -> Result<ndarray_crate::ArrayViewMut1<'a, slepc_sys::PetscScalar>> {
+    pub fn as_arrayview(
+        &mut self,
+    ) -> Result<ndarray_crate::ArrayViewMut1<'a, slepc_sys::PetscScalar>> {
         // Get slice from raw pointer
         let size = usize::try_from(self.vec.get_local_size()?).unwrap();
         Ok(unsafe { ndarray_crate::ArrayViewMut1::from_shape_ptr(size, self.array) })

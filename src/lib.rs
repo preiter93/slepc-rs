@@ -11,7 +11,7 @@
 //! ## Installation
 //!
 //! ### `PETSc`
-//! Download [download `PETSc`](https://petsc.org/release/download/). This
+//! Download [`PETSc`](https://petsc.org/release/download/). This
 //! crate is tested with v.`3.16.4`.
 //!
 //! Install petsc via
@@ -44,8 +44,8 @@
 //! - Turn on feature `scalar_complex`!
 //!
 //! ### `SLEPc`
-//! Download [download `SLEPc`](https://slepc.upv.es/download/). This
-//! crate is tested with v.`3.16.2`.
+//! Download [`SLEPc`](https://slepc.upv.es/download/). This
+//! crate is tested with `v.3.16.2`.
 //!
 //! Install slepc via
 //! ```text
@@ -79,6 +79,8 @@ pub mod st;
 pub mod vec;
 pub mod world;
 pub use slepc_sys;
+pub mod options;
+pub mod viewer;
 
 #[derive(Debug, Clone)]
 pub struct PetscError {

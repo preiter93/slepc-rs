@@ -66,6 +66,56 @@ pub enum InsertMode {
     ADD_BC_VALUES = 8,
 }
 
+// ---------- `Viewer` ----------
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _p_PetscViewer {
+    _unused: [u8; 0],
+}
+pub type PetscViewer = *mut _p_PetscViewer;
+extern "C" {
+    pub fn PetscViewerCreate(arg1: MPI_Comm, arg2: *mut PetscViewer) -> PetscErrorCode;
+}
+extern "C" {
+    pub fn PETSC_VIEWER_STDOUT_(arg1: MPI_Comm) -> PetscViewer;
+}
+extern "C" {
+    pub fn PetscViewerDestroy(arg1: *mut PetscViewer) -> PetscErrorCode;
+}
+
+// ---------- `Options` ----------
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _n_PetscOptions {
+    _unused: [u8; 0],
+}
+pub type PetscOptions = *mut _n_PetscOptions;
+extern "C" {
+    pub fn PetscOptionsCreate(arg1: *mut PetscOptions) -> PetscErrorCode;
+}
+extern "C" {
+    pub fn PetscOptionsPush(arg1: PetscOptions) -> PetscErrorCode;
+}
+extern "C" {
+    pub fn PetscOptionsPop() -> PetscErrorCode;
+}
+extern "C" {
+    pub fn PetscOptionsDestroy(arg1: *mut PetscOptions) -> PetscErrorCode;
+}
+extern "C" {
+    pub fn PetscOptionsCreateDefault() -> PetscErrorCode;
+}
+extern "C" {
+    pub fn PetscOptionsDestroyDefault() -> PetscErrorCode;
+}
+extern "C" {
+    pub fn PetscOptionsSetValue(
+        arg1: PetscOptions,
+        arg2: *const ::std::os::raw::c_char,
+        arg3: *const ::std::os::raw::c_char,
+    ) -> PetscErrorCode;
+}
+
 // ---------- `Vec` ----------
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -528,6 +578,9 @@ extern "C" {
 }
 extern "C" {
     pub fn KSPGetPC(arg1: KSP, arg2: *mut PC) -> PetscErrorCode;
+}
+extern "C" {
+    pub fn KSPConvergedReasonView(arg1: KSP, arg2: PetscViewer) -> PetscErrorCode;
 }
 // ---------- `ST` ----------
 #[repr(C)]

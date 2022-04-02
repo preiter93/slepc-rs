@@ -166,7 +166,7 @@ impl SlepcEps {
 
     /// Wrapper for [`slepc_sys::EPSSetST`]
     ///
-    /// Associates a spectral transformation [`crate::spectral_transform::PetscST`]
+    /// Associates a spectral transformation [`crate::st::PetscST`]
     /// to the eigensolver.
     ///
     /// # Errors
@@ -293,7 +293,7 @@ impl SlepcEps {
 
     /// Wrapper for [`slepc_sys::EPSGetST`]
     ///
-    /// Obtain the spectral transformation [`crate::spectral_transform::PetscST`]
+    /// Obtain the spectral transformation [`crate::st::PetscST`]
     /// object associated to the eigensolver object.
     ///
     /// # Errors

@@ -13,7 +13,7 @@ how `SLEPc` can be called from Rust.
 ### Installation
 
 #### `PETSc`
-Download [download `PETSc`](https://petsc.org/release/download/). This
+Download [`PETSc`](https://petsc.org/release/download/). This
 crate is tested with v.`3.16.4`.
 
 Install petsc via
@@ -46,8 +46,8 @@ or build together with lapack, i.e. --download-f2cblaslapack)
 - Turn on feature `scalar_complex`!
 
 #### `SLEPc`
-Download [download `SLEPc`](https://slepc.upv.es/download/). This
-crate is tested with v.`3.16.2`.
+Download [`SLEPc`](https://slepc.upv.es/download/). This
+crate is tested with `v.3.16.2`.
 
 Install slepc via
 ```
